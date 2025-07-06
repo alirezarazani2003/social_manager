@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 import random
+from decouple import config
 
 class EmailOTP(models.Model):
     email = models.EmailField()
@@ -9,7 +10,7 @@ class EmailOTP(models.Model):
     is_used = models.BooleanField(default=False)
 
     def is_expired(self):
-        return timezone.now() > self.created_at + timezone.timedelta(minutes=5)
+        return timezone.now() > self.created_at + timezone.timedelta(minutes=int(config("OTP_EXPIRATION_MINUTES")))
 
     @staticmethod
     def generate_otp():

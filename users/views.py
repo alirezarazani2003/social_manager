@@ -6,6 +6,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 
 class RegisterView(APIView):
@@ -68,7 +69,17 @@ class LoginView(APIView):
 
         if not user.is_verified:
             return Response({"detail": "ایمیل شما هنوز وریفای نشده است."}, status=401)
-
+        
+        try:
+            tokens = OutstandingToken.objects.filter(user=user)
+            for token in tokens:
+                try:
+                    BlacklistedToken.objects.get_or_create(token=token)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        
         refresh = RefreshToken.for_user(user)
         return Response({
             "access": str(refresh.access_token),

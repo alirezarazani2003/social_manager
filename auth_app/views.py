@@ -14,7 +14,7 @@ from users.models import User
 from .permissions import IsEmailVerified
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-
+from django.contrib.auth import update_session_auth_hash
 
 class RequestOTPView(APIView):
     @swagger_auto_schema(
@@ -205,3 +205,109 @@ class LoginWithOTPView(APIView):
             'access': str(refresh.access_token),
         })
 
+
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['old_password', 'new_password'],
+            properties={
+                'old_password': openapi.Schema(type=openapi.TYPE_STRING, description='رمز عبور فعلی'),
+                'new_password': openapi.Schema(type=openapi.TYPE_STRING, description='رمز عبور جدید'),
+            }
+        ),
+        responses={
+            200: openapi.Response(description="رمز با موفقیت تغییر کرد"),
+            400: openapi.Response(description="رمز فعلی اشتباه است یا داده نامعتبر است"),
+        },
+        operation_summary="تغییر رمز عبور (برای کاربران لاگین‌شده)",
+        operation_description="کاربر لاگین‌شده می‌تواند رمز عبور فعلی خود را تغییر دهد."
+    )
+    def post(self, request):
+        user = request.user
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+
+        if not user.check_password(old_password):
+            return Response({'msg': 'رمز عبور فعلی اشتباه است'}, status=400)
+
+        user.set_password(new_password)
+        user.save()
+        update_session_auth_hash(request, user)
+        return Response({'msg': 'رمز عبور با موفقیت تغییر کرد'})
+    
+    
+class RequestResetPasswordOTPView(APIView):
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['email'],
+            properties={
+                'email': openapi.Schema(type=openapi.TYPE_STRING, format='email')
+            }
+        ),
+        responses={
+            200: openapi.Response(description="OTP ارسال شد"),
+            404: openapi.Response(description="کاربر با این ایمیل یافت نشد")
+        },
+        operation_summary="درخواست OTP برای بازیابی رمز",
+        operation_description="با وارد کردن ایمیل، یک OTP برای ریست رمز عبور ارسال می‌شود"
+    )
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            user = User.objects.get(email=email)
+            otp = EmailOTP.generate_otp()
+            EmailOTP.objects.create(email=email, otp=otp)
+            send_mail(
+                subject="کد بازیابی رمز عبور",
+                message=f"کد بازیابی شما: {otp}",
+                from_email="noreply@yourdomain.com",
+                recipient_list=[email]
+            )
+            return Response({'msg': 'کد برای ایمیل ارسال شد.'})
+        except User.DoesNotExist:
+            return Response({'msg': 'کاربری با این ایمیل یافت نشد.'}, status=404)
+
+
+class ResetPasswordWithOTPView(APIView):
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['email', 'otp', 'new_password'],
+            properties={
+                'email': openapi.Schema(type=openapi.TYPE_STRING),
+                'otp': openapi.Schema(type=openapi.TYPE_STRING),
+                'new_password': openapi.Schema(type=openapi.TYPE_STRING),
+            }
+        ),
+        responses={
+            200: openapi.Response(description="رمز با موفقیت تغییر کرد"),
+            400: openapi.Response(description="کد اشتباه یا منقضی شده است"),
+        },
+        operation_summary="تغییر رمز عبور با OTP",
+        operation_description="پس از دریافت کد OTP، رمز جدید تعیین می‌شود."
+    )
+    def post(self, request):
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+        new_password = request.data.get('new_password')
+
+        try:
+            otp_obj = EmailOTP.objects.filter(email=email, otp=otp, is_used=False).latest('created_at')
+            if otp_obj.is_expired():
+                return Response({'msg': 'کد منقضی شده'}, status=400)
+            user = User.objects.get(email=email)
+            user.set_password(new_password)
+            user.save()
+            otp_obj.is_used = True
+            otp_obj.save()
+            return Response({'msg': 'رمز عبور با موفقیت تغییر کرد'})
+        except EmailOTP.DoesNotExist:
+            return Response({'msg': 'کد نامعتبر است'}, status=400)
+        except User.DoesNotExist:
+            return Response({'msg': 'کاربر یافت نشد'}, status=404)

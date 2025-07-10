@@ -4,10 +4,12 @@ User = get_user_model()
 
 class RequestOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
+    purpose = serializers.ChoiceField(choices=["verify", "login", "reset"])
 
 class VerifyOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField()
+    purpose = serializers.ChoiceField(choices=["verify", "login", "reset"])
 
 
 

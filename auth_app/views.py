@@ -7,16 +7,18 @@ from django.core.mail import send_mail
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from typing import Any
-
 from .models import EmailOTP, OTPPurpose
 from .serializers import RequestOTPSerializer, VerifyOTPSerializer, UserSerializer
 from users.models import User
 from .permissions import IsEmailVerified
 from django.contrib.auth import update_session_auth_hash
+from decouple import config
+from django.conf import settings
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 
 class MeView(generics.RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsEmailVerified]
     serializer_class = UserSerializer
 
     @swagger_auto_schema(
@@ -32,21 +34,19 @@ class MeView(generics.RetrieveAPIView):
 
 
 class ProtectedDashboardView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsEmailVerified]
 
     def get(self, request: Any) -> Response:
-        return Response({"msg": "خوش آمدید به داشبورد امن!"})
-
+        return Response({
+            "msg": "خوش آمدید!",
+            "email": request.user.email
+        })
 
 class RequestOTPView(APIView):
     @swagger_auto_schema(
         request_body=RequestOTPSerializer,
-        responses={
-            200: openapi.Response(description="OTP با موفقیت ارسال شد"),
-            400: openapi.Response(description="درخواست نامعتبر یا ایمیل اشتباه"),
-        },
-        operation_summary="ارسال کد OTP برای تایید ایمیل",
-        operation_description="دریافت ایمیل، تولید و ارسال کد OTP برای تایید ایمیل"
+        responses={200: openapi.Response(description="OTP با موفقیت ارسال شد")},
+        operation_summary="ارسال کد OTP برای تایید ایمیل"
     )
     def post(self, request: Any) -> Response:
         serializer = RequestOTPSerializer(data=request.data)
@@ -69,12 +69,8 @@ class RequestOTPView(APIView):
 class VerifyOTPView(APIView):
     @swagger_auto_schema(
         request_body=VerifyOTPSerializer,
-        responses={
-            200: openapi.Response(description="ایمیل با موفقیت وریفای شد"),
-            400: openapi.Response(description="کد اشتباه یا منقضی شده"),
-        },
-        operation_summary="تایید کد OTP برای ایمیل",
-        operation_description="دریافت ایمیل و کد OTP، و در صورت صحت، وریفای کردن ایمیل کاربر"
+        responses={200: openapi.Response(description="ایمیل وریفای شد")},
+        operation_summary="تایید کد OTP"
     )
     def post(self, request: Any) -> Response:
         serializer = VerifyOTPSerializer(data=request.data)
@@ -144,25 +140,12 @@ class LoginWithOTPView(APIView):
             type=openapi.TYPE_OBJECT,
             required=['email', 'otp'],
             properties={
-                'email': openapi.Schema(type=openapi.TYPE_STRING, format='email', description='ایمیل'),
-                'otp': openapi.Schema(type=openapi.TYPE_STRING, description='کد ۶ رقمی OTP'),
+                'email': openapi.Schema(type=openapi.TYPE_STRING),
+                'otp': openapi.Schema(type=openapi.TYPE_STRING),
             }
         ),
-        responses={
-            200: openapi.Response(
-                description="ورود موفق",
-                examples={
-                    "application/json": {
-                        "access": "JWT_ACCESS_TOKEN",
-                        "refresh": "JWT_REFRESH_TOKEN"
-                    }
-                }
-            ),
-            400: openapi.Response(description="ایمیل یا کد اشتباه است یا منقضی شده"),
-            403: openapi.Response(description="ایمیل هنوز وریفای نشده"),
-        },
-        operation_summary="ورود با کد OTP",
-        operation_description="دریافت ایمیل و کد OTP، و ورود کاربر در صورت صحت اطلاعات"
+        responses={200: openapi.Response(description="ورود موفق")},
+        operation_summary="ورود با OTP"
     )
     def post(self, request: Any) -> Response:
         email = request.data.get('email')
@@ -186,15 +169,44 @@ class LoginWithOTPView(APIView):
 
         if not user.is_verified:
             return Response({'msg': 'ایمیل هنوز وریفای نشده'}, status=status.HTTP_403_FORBIDDEN)
-
+        
+        try:
+            tokens = OutstandingToken.objects.filter(user=user).order_by('created_at')
+            max_tokens = getattr(settings, 'MAX_ACTIVE_TOKENS',)
+            tokens_to_keep = tokens[:max_tokens]
+            tokens_to_blacklist = tokens[max_tokens:]
+            for token in tokens_to_blacklist:
+                BlacklistedToken.objects.get_or_create(token=token)
+        except Exception as e:
+            print("Token cleanup error:", e)
+            
         otp_obj.is_used = True
         otp_obj.save()
 
         refresh = RefreshToken.for_user(user)
-        return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-        }, status=status.HTTP_200_OK)
+        access_token = str(refresh.access)
+        response = Response({'msg': 'ورود موفق'}, status=status.HTTP_200_OK)
+
+
+        response.set_cookie(
+            key='access',
+            value=access_token,
+            httponly=True,
+            secure=config('COOKIE_SECURE', cast=bool, default=False),
+            samesite='Lax',
+            max_age=config('ACCESS_TOKEN_MINUTES', cast=int) * 60
+        )
+
+        response.set_cookie(
+            key='refresh',
+            value=str(refresh),
+            httponly=True,
+            secure=config('COOKIE_SECURE', cast=bool, default=False),
+            samesite='Lax',
+            max_age=config('REFRESH_TOKEN_DAYS', cast=int) * 24 * 3600
+        )
+        
+        return response
 
 
 class RequestResetPasswordOTPView(APIView):
@@ -323,28 +335,76 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=["refresh"],
-            properties={
-                "refresh": openapi.Schema(type=openapi.TYPE_STRING, description="توکن رفرش برای بلاک کردن")
-            }
-        ),
+        request_body=None, 
         responses={
             205: openapi.Response(description="خروج موفق"),
-            400: openapi.Response(description="توکن نامعتبر یا داده ناقص"),
+            400: openapi.Response(description="توکن رفرش در کوکی‌ها پیدا نشد"),
+            401: openapi.Response(description="کاربر احراز هویت نشده است"),
         },
-        operation_summary="خروج کاربر",
-        operation_description="توکن رفرش را بلاک می‌کند و کاربر را خارج می‌سازد."
+        operation_summary="خروج کاربر و حذف توکن‌ها از کوکی‌ها",
+        operation_description="با حذف توکن‌ها از کوکی‌ها، کاربر از سیستم خارج می‌شود."
     )
     def post(self, request: Any) -> Response:
-        try:
-            refresh_token = request.data.get("refresh")
-            if not refresh_token:
-                return Response({"msg": "توکن رفرش ارسال نشده است"}, status=status.HTTP_400_BAD_REQUEST)
+        refresh_token = request.COOKIES.get('refresh')
+        print("refresh_token:", refresh_token) 
+        if not refresh_token:
+            return Response({'msg': 'توکن یافت نشد'}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response({"msg": "خروج موفق"}, status=status.HTTP_205_RESET_CONTENT)
-        except Exception as e:
-            return Response({"msg": f"خطا: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            pass
+        
+        response = Response({'msg': 'خروج موفق'}, status=status.HTTP_205_RESET_CONTENT)
+        response.delete_cookie('access')
+        response.delete_cookie('refresh')
+        return response
+
+
+class CookieTokenRefreshView(APIView):
+    @swagger_auto_schema(
+        operation_summary="تجدید توکن دسترسی با استفاده از توکن رفرش کوکی",
+        operation_description="توکن رفرش را از کوکی دریافت می‌کند و در صورت معتبر بودن توکن جدید دسترسی (Access Token) را صادر می‌کند و در کوکی ذخیره می‌کند.",
+        responses={
+            200: openapi.Response(
+                description="توکن جدید صادر شد",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'msg': openapi.Schema(type=openapi.TYPE_STRING, description='پیغام موفقیت'),
+                    },
+                ),
+            ),
+            401: openapi.Response(
+                description="توکن یافت نشد یا نامعتبر",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'msg': openapi.Schema(type=openapi.TYPE_STRING, description='پیغام خطا'),
+                    },
+                ),
+            ),
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get('refresh')
+        if not refresh_token:
+            return Response({'msg': 'توکن یافت نشد'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            token = RefreshToken(refresh_token)
+            access_token = str(token.access_token)
+        except Exception:
+            return Response({'msg': 'توکن نامعتبر است'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        response = Response({'msg': 'توکن جدید صادر شد'}, status=status.HTTP_200_OK)
+        response.set_cookie(
+            key='access',
+            value=access_token,
+            httponly=True,
+            secure=config('COOKIE_SECURE', cast=bool, default=False),
+            samesite='Lax',
+            max_age=config('ACCESS_TOKEN_MINUTES', cast=int) * 60,
+        )
+        return response

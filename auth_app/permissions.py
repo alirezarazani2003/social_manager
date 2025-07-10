@@ -8,7 +8,7 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'first_name', 'last_name', 'email', 'phone_number', 'is_email_verified')
+        fields = ('id', 'first_name', 'last_name', 'email', 'phone_number', 'is_verified')
 
 class IsEmailVerified(permissions.BasePermission):
     """
@@ -16,11 +16,11 @@ class IsEmailVerified(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated and request.user.is_email_verified
+        return request.user and request.user.is_authenticated and request.user.is_verified
 
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'first_name', 'last_name', 'email', 'phone_number', 'is_email_verified')
+        fields = ('id', 'first_name', 'last_name', 'email', 'phone_number', 'is_verified')

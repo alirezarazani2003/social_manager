@@ -7,7 +7,8 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .serializers import RegisterSerializer
 from utils.responses import success_response, error_response
-
+from decouple import config
+from django.conf import settings
 
 class RegisterView(APIView):
     @swagger_auto_schema(
@@ -43,20 +44,14 @@ class LoginView(APIView):
             }
         ),
         responses={
-            200: openapi.Response(
-                description="ورود موفق",
-                examples={
-                    "application/json": {
-                        "access": "JWT_ACCESS_TOKEN",
-                        "refresh": "JWT_REFRESH_TOKEN"
-                    }
-                }
-            ),
+            200: openapi.Response(description="ورود موفق (توکن‌ها در کوکی HTTPOnly ذخیره شده‌اند)"),
             400: openapi.Response(description="ورودی ناقص یا نامعتبر"),
             401: openapi.Response(description="ایمیل یا رمز اشتباه / ایمیل وریفای نشده"),
         },
-        operation_summary="ورود کاربر",
-        operation_description="ایمیل و رمز عبور را دریافت کرده، احراز هویت می‌کند و در صورت موفقیت توکن JWT برمی‌گرداند."
+        operation_summary="ورود کاربر (امن)",
+        operation_description="""
+ایمیل و رمز عبور را دریافت کرده، احراز هویت می‌کند و در صورت موفقیت، توکن‌های JWT را به‌صورت امن در کوکی ذخیره می‌کند (نه در بدنه پاسخ).
+"""
     )
     def post(self, request):
         email = request.data.get("email")
@@ -74,14 +69,36 @@ class LoginView(APIView):
             return error_response(message="ایمیل شما هنوز وریفای نشده است.", status_code=status.HTTP_401_UNAUTHORIZED)
 
         try:
-            tokens = OutstandingToken.objects.filter(user=user)
-            for token in tokens:
+            tokens = OutstandingToken.objects.filter(user=user).order_by('created_at')
+            max_tokens = getattr(settings, 'MAX_ACTIVE_TOKENS',)
+            tokens_to_keep = tokens[:max_tokens]
+            tokens_to_blacklist = tokens[max_tokens:]
+            for token in tokens_to_blacklist:
                 BlacklistedToken.objects.get_or_create(token=token)
-        except Exception:
-            pass
+        except Exception as e:
+            print("Token cleanup error:", e)
 
         refresh = RefreshToken.for_user(user)
-        return success_response(data={
-            "access": str(refresh.access_token),
-            "refresh": str(refresh)
-        }, message="ورود موفق بود.")
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        response = success_response(message="ورود موفق بود.")
+
+        response.set_cookie(
+            key='access',
+            value=access_token,
+            httponly=True,
+            secure=config('COOKIE_SECURE', cast=bool, default=False),
+            samesite='Strict',
+            max_age=config('ACCESS_TOKEN_MINUTES', cast=int) * 60
+        )
+        response.set_cookie(
+            key='refresh',
+            value=refresh_token,
+            httponly=True,
+            secure=config('COOKIE_SECURE', cast=bool, default=False),
+            samesite='Strict',
+            max_age=config('REFRESH_TOKEN_DAYS', cast=int) * 24 * 3600
+        )
+        print("Set refresh_token cookie:", refresh_token)
+        return response

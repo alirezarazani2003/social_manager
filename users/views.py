@@ -1,12 +1,12 @@
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegisterSerializer
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from .serializers import RegisterSerializer
+from utils.responses import success_response, error_response
 
 
 class RegisterView(APIView):
@@ -26,8 +26,11 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'msg': 'ثبت‌نام موقت انجام شد. وارد داشبورد شدی اما باید ایمیل رو وریفای کنی.'})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return success_response(
+                message='ثبت‌نام موقت انجام شد. وارد داشبورد شدید اما باید ایمیل را وریفای کنید.'
+            )
+        return error_response(message='اطلاعات نامعتبر است.', errors=serializer.errors)
+
 
 class LoginView(APIView):
     @swagger_auto_schema(
@@ -60,30 +63,25 @@ class LoginView(APIView):
         password = request.data.get("password")
 
         if not email or not password:
-            return Response({"detail": "لطفاً ایمیل و رمز را وارد کنید."}, status=400)
+            return error_response(message="لطفاً ایمیل و رمز را وارد کنید.", status_code=status.HTTP_400_BAD_REQUEST)
 
         user = authenticate(request, email=email, password=password)
 
         if not user:
-            return Response({"detail": "ایمیل یا رمز اشتباه است."}, status=401)
+            return error_response(message="ایمیل یا رمز اشتباه است.", status_code=status.HTTP_401_UNAUTHORIZED)
 
         if not user.is_verified:
-            return Response({"detail": "ایمیل شما هنوز وریفای نشده است."}, status=401)
-        
+            return error_response(message="ایمیل شما هنوز وریفای نشده است.", status_code=status.HTTP_401_UNAUTHORIZED)
+
         try:
             tokens = OutstandingToken.objects.filter(user=user)
             for token in tokens:
-                try:
-                    BlacklistedToken.objects.get_or_create(token=token)
-                except Exception:
-                    pass
+                BlacklistedToken.objects.get_or_create(token=token)
         except Exception:
             pass
-        
+
         refresh = RefreshToken.for_user(user)
-        return Response({
+        return success_response(data={
             "access": str(refresh.access_token),
             "refresh": str(refresh)
-        })
-
-
+        }, message="ورود موفق بود.")

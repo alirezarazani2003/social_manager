@@ -1,17 +1,19 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status , generics
+from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from typing import Any
 
 from .models import EmailOTP, OTPPurpose
 from .serializers import RequestOTPSerializer, VerifyOTPSerializer, UserSerializer
 from users.models import User
 from .permissions import IsEmailVerified
 from django.contrib.auth import update_session_auth_hash
+
 
 class MeView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
@@ -25,14 +27,16 @@ class MeView(generics.RetrieveAPIView):
         operation_summary="دریافت اطلاعات کاربر فعلی",
         operation_description="اطلاعات پروفایل کاربری که لاگین کرده را برمی‌گرداند."
     )
-    def get_object(self):
+    def get_object(self) -> User:
         return self.request.user
+
 
 class ProtectedDashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request: Any) -> Response:
         return Response({"msg": "خوش آمدید به داشبورد امن!"})
+
 
 class RequestOTPView(APIView):
     @swagger_auto_schema(
@@ -44,22 +48,24 @@ class RequestOTPView(APIView):
         operation_summary="ارسال کد OTP برای تایید ایمیل",
         operation_description="دریافت ایمیل، تولید و ارسال کد OTP برای تایید ایمیل"
     )
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         serializer = RequestOTPSerializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data['email']
-            EmailOTP.objects.filter(email=email, is_used=False, purpose=OTPPurpose.VERIFY).delete()
+        serializer.is_valid(raise_exception=True)
 
-            otp = EmailOTP.generate_otp()
-            EmailOTP.objects.create(email=email, otp=otp, purpose=OTPPurpose.VERIFY)
-            send_mail(
-                subject="کد تأیید ایمیل",
-                message=f"کد شما: {otp}",
-                from_email="noreply@yourdomain.com",
-                recipient_list=[email]
-            )
-            return Response({'msg': 'کد برای ایمیل ارسال شد.'})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        email = serializer.validated_data['email']
+        EmailOTP.objects.filter(email=email, is_used=False, purpose=OTPPurpose.VERIFY).delete()
+
+        otp = EmailOTP.generate_otp()
+        EmailOTP.objects.create(email=email, otp=otp, purpose=OTPPurpose.VERIFY)
+        send_mail(
+            subject="کد تأیید ایمیل",
+            message=f"کد شما: {otp}",
+            from_email="noreply@yourdomain.com",
+            recipient_list=[email]
+        )
+        return Response({'msg': 'کد برای ایمیل ارسال شد.'}, status=status.HTTP_200_OK)
+
+
 class VerifyOTPView(APIView):
     @swagger_auto_schema(
         request_body=VerifyOTPSerializer,
@@ -70,29 +76,29 @@ class VerifyOTPView(APIView):
         operation_summary="تایید کد OTP برای ایمیل",
         operation_description="دریافت ایمیل و کد OTP، و در صورت صحت، وریفای کردن ایمیل کاربر"
     )
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         serializer = VerifyOTPSerializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data['email']
-            otp = serializer.validated_data['otp']
+        serializer.is_valid(raise_exception=True)
 
-            try:
-                otp_obj = EmailOTP.objects.filter(email=email, otp=otp, is_used=False, purpose=OTPPurpose.VERIFY).latest('created_at')
-            except EmailOTP.DoesNotExist:
-                return Response({'msg': 'کد اشتباه است یا وجود ندارد'}, status=400)
+        email = serializer.validated_data['email']
+        otp = serializer.validated_data['otp']
 
-            if otp_obj.is_expired():
-                return Response({'msg': 'کد منقضی شده'}, status=400)
+        try:
+            otp_obj = EmailOTP.objects.filter(email=email, otp=otp, is_used=False, purpose=OTPPurpose.VERIFY).latest('created_at')
+        except EmailOTP.DoesNotExist:
+            return Response({'msg': 'کد اشتباه است یا وجود ندارد'}, status=status.HTTP_400_BAD_REQUEST)
 
-            otp_obj.is_used = True
-            otp_obj.save()
+        if otp_obj.is_expired():
+            return Response({'msg': 'کد منقضی شده'}, status=status.HTTP_400_BAD_REQUEST)
 
-            user = User.objects.get(email=email)
-            user.is_verified = True
-            user.save()
+        otp_obj.is_used = True
+        otp_obj.save()
 
-            return Response({'msg': 'ایمیل وریفای شد.'})
-        return Response(serializer.errors, status=400)
+        user = User.objects.get(email=email)
+        user.is_verified = True
+        user.save()
+
+        return Response({'msg': 'ایمیل وریفای شد.'}, status=status.HTTP_200_OK)
 
 
 class RequestLoginOTPView(APIView):
@@ -107,29 +113,29 @@ class RequestLoginOTPView(APIView):
         operation_summary="ارسال OTP برای ورود",
         operation_description="دریافت ایمیل و ارسال کد ورود (OTP) به ایمیل کاربر"
     )
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         serializer = RequestOTPSerializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data['email']
-            try:
-                user = User.objects.get(email=email)
-                if not user.is_active:
-                    return Response({'msg': 'اکانت شما غیرفعال است.'}, status=403)
+        serializer.is_valid(raise_exception=True)
 
-                EmailOTP.objects.filter(email=email, is_used=False, purpose=OTPPurpose.LOGIN).delete()
-                otp = EmailOTP.generate_otp()
-                EmailOTP.objects.create(email=email, otp=otp, purpose=OTPPurpose.LOGIN)
+        email = serializer.validated_data['email']
+        try:
+            user = User.objects.get(email=email)
+            if not user.is_active:
+                return Response({'msg': 'اکانت شما غیرفعال است.'}, status=status.HTTP_403_FORBIDDEN)
 
-                send_mail(
-                    subject="کد ورود",
-                    message=f"کد ورود شما: {otp}",
-                    from_email="noreply@yourdomain.com",
-                    recipient_list=[email]
-                )
-                return Response({'msg': 'کد ورود به ایمیل ارسال شد.'})
-            except User.DoesNotExist:
-                return Response({'msg': 'کاربری با این ایمیل یافت نشد.'}, status=404)
-        return Response(serializer.errors, status=400)
+            EmailOTP.objects.filter(email=email, is_used=False, purpose=OTPPurpose.LOGIN).delete()
+            otp = EmailOTP.generate_otp()
+            EmailOTP.objects.create(email=email, otp=otp, purpose=OTPPurpose.LOGIN)
+
+            send_mail(
+                subject="کد ورود",
+                message=f"کد ورود شما: {otp}",
+                from_email="noreply@yourdomain.com",
+                recipient_list=[email]
+            )
+            return Response({'msg': 'کد ورود به ایمیل ارسال شد.'}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({'msg': 'کاربری با این ایمیل یافت نشد.'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class LoginWithOTPView(APIView):
@@ -158,25 +164,28 @@ class LoginWithOTPView(APIView):
         operation_summary="ورود با کد OTP",
         operation_description="دریافت ایمیل و کد OTP، و ورود کاربر در صورت صحت اطلاعات"
     )
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         email = request.data.get('email')
         otp = request.data.get('otp')
+
+        if not email or not otp:
+            return Response({'msg': 'ایمیل و کد OTP الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             otp_obj = EmailOTP.objects.filter(email=email, otp=otp, is_used=False, purpose=OTPPurpose.LOGIN).latest('created_at')
         except EmailOTP.DoesNotExist:
-            return Response({'msg': 'کد اشتباه است یا وجود ندارد'}, status=400)
+            return Response({'msg': 'کد اشتباه است یا وجود ندارد'}, status=status.HTTP_400_BAD_REQUEST)
 
         if otp_obj.is_expired():
-            return Response({'msg': 'کد منقضی شده'}, status=400)
+            return Response({'msg': 'کد منقضی شده'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({'msg': 'کاربری با این ایمیل یافت نشد'}, status=400)
+            return Response({'msg': 'کاربری با این ایمیل یافت نشد'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not user.is_verified:
-            return Response({'msg': 'ایمیل هنوز وریفای نشده'}, status=403)
+            return Response({'msg': 'ایمیل هنوز وریفای نشده'}, status=status.HTTP_403_FORBIDDEN)
 
         otp_obj.is_used = True
         otp_obj.save()
@@ -185,7 +194,7 @@ class LoginWithOTPView(APIView):
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
-        })
+        }, status=status.HTTP_200_OK)
 
 
 class RequestResetPasswordOTPView(APIView):
@@ -204,8 +213,11 @@ class RequestResetPasswordOTPView(APIView):
         operation_summary="درخواست کد OTP برای بازیابی رمز عبور",
         operation_description="دریافت ایمیل و ارسال کد OTP برای ریست کردن رمز عبور"
     )
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         email = request.data.get('email')
+        if not email:
+            return Response({'msg': 'ایمیل الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             user = User.objects.get(email=email)
 
@@ -219,9 +231,9 @@ class RequestResetPasswordOTPView(APIView):
                 from_email="noreply@yourdomain.com",
                 recipient_list=[email]
             )
-            return Response({'msg': 'کد برای ایمیل ارسال شد.'})
+            return Response({'msg': 'کد برای ایمیل ارسال شد.'}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
-            return Response({'msg': 'کاربری با این ایمیل یافت نشد.'}, status=404)
+            return Response({'msg': 'کاربری با این ایمیل یافت نشد.'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ResetPasswordWithOTPView(APIView):
@@ -243,15 +255,18 @@ class ResetPasswordWithOTPView(APIView):
         operation_summary="ریست رمز عبور با OTP",
         operation_description="پس از دریافت کد OTP، تعیین رمز عبور جدید"
     )
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         email = request.data.get('email')
         otp = request.data.get('otp')
         new_password = request.data.get('new_password')
 
+        if not all([email, otp, new_password]):
+            return Response({'msg': 'ایمیل، کد OTP و رمز جدید باید ارسال شود'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             otp_obj = EmailOTP.objects.filter(email=email, otp=otp, is_used=False, purpose=OTPPurpose.RESET).latest('created_at')
             if otp_obj.is_expired():
-                return Response({'msg': 'کد منقضی شده'}, status=400)
+                return Response({'msg': 'کد منقضی شده'}, status=status.HTTP_400_BAD_REQUEST)
 
             user = User.objects.get(email=email)
             user.set_password(new_password)
@@ -260,11 +275,11 @@ class ResetPasswordWithOTPView(APIView):
             otp_obj.is_used = True
             otp_obj.save()
 
-            return Response({'msg': 'رمز عبور با موفقیت تغییر کرد'})
+            return Response({'msg': 'رمز عبور با موفقیت تغییر کرد'}, status=status.HTTP_200_OK)
         except EmailOTP.DoesNotExist:
-            return Response({'msg': 'کد نامعتبر است'}, status=400)
+            return Response({'msg': 'کد نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
-            return Response({'msg': 'کاربر یافت نشد'}, status=404)
+            return Response({'msg': 'کاربر یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ChangePasswordView(APIView):
@@ -286,19 +301,22 @@ class ChangePasswordView(APIView):
         operation_summary="تغییر رمز عبور برای کاربر وارد شده",
         operation_description="تغییر رمز عبور با وارد کردن رمز فعلی و رمز جدید"
     )
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         user = request.user
         old_password = request.data.get('old_password')
         new_password = request.data.get('new_password')
 
+        if not old_password or not new_password:
+            return Response({'msg': 'رمز عبور فعلی و جدید باید ارسال شود'}, status=status.HTTP_400_BAD_REQUEST)
+
         if not user.check_password(old_password):
-            return Response({'msg': 'رمز عبور فعلی اشتباه است'}, status=400)
+            return Response({'msg': 'رمز عبور فعلی اشتباه است'}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save()
         update_session_auth_hash(request, user)
 
-        return Response({'msg': 'رمز عبور با موفقیت تغییر کرد'})
+        return Response({'msg': 'رمز عبور با موفقیت تغییر کرد'}, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
@@ -319,11 +337,14 @@ class LogoutView(APIView):
         operation_summary="خروج کاربر",
         operation_description="توکن رفرش را بلاک می‌کند و کاربر را خارج می‌سازد."
     )
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         try:
-            refresh_token = request.data["refresh"]
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"msg": "توکن رفرش ارسال نشده است"}, status=status.HTTP_400_BAD_REQUEST)
+
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
+            return Response({"msg": "خروج موفق"}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"msg": f"خطا: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)

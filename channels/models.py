@@ -15,6 +15,7 @@ class Channel(models.Model):
     platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
     is_verified = models.BooleanField(default=False)  # در صورت تأیید توسط ربات
     failed_reason = models.TextField(blank=True, null=True)
+    platform_channel_id = models.CharField(max_length=200, null=True, blank=True, help_text="شناسه کانال در پلتفرم مربوطه (مثلاً chat_id)")
 
     created_at = models.DateTimeField(auto_now_add=True)
 

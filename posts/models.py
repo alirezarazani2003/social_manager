@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from channels.models import Channel
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -12,9 +13,17 @@ class Post(models.Model):
         ('failed', 'ارسال ناموفق'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    channel = models.ForeignKey(Channel, on_delete=models.CASCADE)
-    text = models.TextField(blank=True, null=True)
+    TEXT = 'text'
+    MEDIA = 'media'
+
+    POST_TYPES = [
+        (TEXT, 'متنی'),
+        (MEDIA, 'چندرسانه‌ای'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
+    channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name='posts')
+    content = models.TextField()
     media_files = models.JSONField(blank=True, null=True)  
     # media_files می‌تواند لیستی از URL یا اطلاعات فایل‌ها باشد (برای مثال مسیر فایل یا URL آپلود شده)
     scheduled_time = models.DateTimeField(blank=True, null=True)  # اگر None باشه یعنی ارسال فوری
@@ -22,6 +31,18 @@ class Post(models.Model):
     error_message = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(blank=True, null=True)
-
+    types = models.CharField(max_length=10, choices=POST_TYPES)
+    
     def __str__(self):
         return f"Post {self.id} to {self.channel.name} by {self.user.username}"
+    
+    def is_scheduled(self):
+        return self.scheduled_time and self.scheduled_time > timezone.now()
+##############################
+
+
+class MediaAttachment(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='post_media/')
+    caption = models.CharField(max_length=255, blank=True)
+

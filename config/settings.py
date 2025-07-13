@@ -187,8 +187,11 @@ JWT_COOKIE_SECURE = False
 
 TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN")
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # آدرس Redis
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Tehran'  # یا منطقه زمانی خودت
 
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

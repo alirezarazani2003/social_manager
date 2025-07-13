@@ -18,6 +18,8 @@ from django.contrib import admin
 from django.urls import path, include
 from auth_app.views import ProtectedDashboardView
 from . import swagger_urls
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,4 +28,4 @@ urlpatterns = [
     path('api/channels/', include('channels.urls')),
     path('api/posts/', include('posts.urls')),
     path('api/dashboard/', ProtectedDashboardView.as_view(), name='dashboard'),
-] + swagger_urls.urlpatterns
+] + swagger_urls.urlpatterns + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

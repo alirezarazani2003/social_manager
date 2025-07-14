@@ -26,5 +26,6 @@ urlpatterns = [
     path('api/auth/', include('auth_app.urls')),
     path('api/users/', include('users.urls')),
     path('api/channels/', include('channels.urls')),
+    path('api/posts/',include('posts.urls')),
     path('api/dashboard/', ProtectedDashboardView.as_view(), name='dashboard'),
 ] + swagger_urls.urlpatterns + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

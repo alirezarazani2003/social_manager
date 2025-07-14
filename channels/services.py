@@ -46,3 +46,31 @@ def verify_channel(platform: str, username: str):
         return verify_bale_channel(username)
     else:
         return False, _("پلتفرم ناشناخته است.")
+
+
+import httpx
+
+def send_message_to_channel(channel, text):
+    if channel.platform == 'telegram':
+        try:
+            url = f"https://api.telegram.org/bot{channel.bot_token}/sendMessage"
+            response = httpx.post(url, data={"chat_id": channel.username, "text": text}, timeout=10)
+            if response.status_code == 200:
+                return True, None
+            else:
+                return False, f"Telegram error: {response.text}"
+        except Exception as e:
+            return False, str(e)
+    # بقیه‌ی پلتفرم‌ها...
+
+
+def send_telegram_message(chat_id: str, text: str):
+    token = settings.TELEGRAM_BOT_TOKEN
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "HTML",
+    }
+    response = requests.post(url, data=payload)
+    return response.json()

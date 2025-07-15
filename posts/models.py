@@ -4,6 +4,8 @@ from channels.models import Channel
 from django.utils import timezone
 
 User = get_user_model()
+def user_media_path(instance, filename):
+    return f'user_{instance.post.user.id}/{filename}'
 
 class Post(models.Model):
     POST_STATUS_CHOICES = [
@@ -40,4 +42,4 @@ class Post(models.Model):
 
 class MediaAttachment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='attachments')
-    file = models.FileField(upload_to='post_media/')
+    file = models.FileField(upload_to=user_media_path)

@@ -27,7 +27,7 @@ class PostCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         post = serializer.save(user=self.request.user, status='pending')
-        if post.scheduled_time:
+        if post.scheduled_time and post.scheduled_time > timezone.localtime():
             send_post_task.apply_async(args=[post.id], eta=post.scheduled_time)
         else:
             send_post_task.delay(post.id)
@@ -57,7 +57,6 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         }
     )
     def get(self, request, *args, **kwargs):
-        # فقط مالک اجازه دارد دسترسی داشته باشد
         post = self.get_object()
         if post.user != request.user:
             return Response({"detail": "دسترسی غیرمجاز"}, status=status.HTTP_403_FORBIDDEN)
@@ -70,9 +69,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         
         serializer = self.get_serializer(post, data=request.data, partial=False)
         serializer.is_valid(raise_exception=True)
-        post = serializer.save(status='pending')  # در ویرایش دوباره وضعیت ارسال به pending تغییر کند
+        post = serializer.save(status='pending')
         
-        # اگر زمان زمانبندی تغییر کرده، کار ارسال زمان‌بندی رو دوباره تنظیم کن
         if post.scheduled_time and post.scheduled_time > timezone.now():
             send_post_task.apply_async(args=[post.id], eta=post.scheduled_time)
         else:

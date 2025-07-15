@@ -33,7 +33,7 @@ class Post(models.Model):
     types = models.CharField(max_length=10, choices=POST_TYPES)
     
     def __str__(self):
-        return f"Post {self.id} to {self.channel.name} by {self.user.username}"
+        return f"Post {self.id} to {self.channel.username} by {self.user.email}"
     
     def is_scheduled(self):
         return self.scheduled_time and self.scheduled_time > timezone.now()

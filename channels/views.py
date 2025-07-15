@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from django.utils.translation import gettext_lazy as _
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-
 from .models import Channel
 from .serializers import ChannelSerializer
 from .services import verify_telegram_channel
@@ -106,12 +105,9 @@ class ChannelDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=False)
         serializer.is_valid(raise_exception=True)
-
-        # بررسی تغییر username یا platform
         new_username = serializer.validated_data.get('username')
         new_platform = serializer.validated_data.get('platform')
 
-        # اگر یکی از این دو تغییر کرده باشد، باید وریفای کنیم
         if (new_username != instance.username) or (new_platform != instance.platform):
             is_ok, result = verify_channel(new_platform, new_username)
             if not is_ok:
@@ -119,10 +115,8 @@ class ChannelDetailView(generics.RetrieveUpdateDestroyAPIView):
                     {"detail": _("عدم توانایی در تأیید کانال پس از ویرایش"), "reason": result},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            # در صورت موفقیت وریفای، مقادیر را بروز می‌کنیم
             serializer.save(is_verified=True, failed_reason="", platform_channel_id=result)
         else:
-            # اگر تغییری در username یا platform نبود، فقط ذخیره می‌کنیم
             serializer.save()
 
         return Response(serializer.data)

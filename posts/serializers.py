@@ -11,7 +11,7 @@ class PostSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         attachments = self.context['request'].FILES.getlist('attachments')
-        if not data.get('text') and not data.get('media_files'):
+        if not data.get('content') and not data.get('media_files'):
             raise serializers.ValidationError("باید حداقل یک متن یا یک رسانه ارسال کنید.")
         
         if data.get("scheduled_time") and data["scheduled_time"] <= timezone.now():

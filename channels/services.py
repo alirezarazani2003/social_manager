@@ -2,6 +2,11 @@ import requests
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
+from telegram import Bot, InputMediaPhoto, InputMediaVideo
+from telegram.error import TelegramError
+from channels.models import Channel
+import asyncio
+
 def verify_telegram_channel(username: str):
     token = settings.TELEGRAM_BOT_TOKEN
     test_message = "در حال بررسی دسترسی ربات برای ارسال پست..."
@@ -48,12 +53,6 @@ def verify_channel(platform: str, username: str):
         return False, _("پلتفرم ناشناخته است.")
 
 
-import httpx
-
-from telegram import Bot, InputMediaPhoto, InputMediaVideo
-from telegram.error import TelegramError
-from channels.models import Channel
-
 def send_message_to_channel(channel: Channel, text: str = "", files: list = None):
     """
     فایل‌ها باید لیستی از دیکشنری‌های شامل این موارد باشند:
@@ -63,50 +62,51 @@ def send_message_to_channel(channel: Channel, text: str = "", files: list = None
         ...
     ]
     """
-    bot_token = channel.bot_token  # فرض: در مدل Channel ذخیره شده
-    chat_id = channel.telegram_chat_id  # فرض: در وریفای ذخیره شده
+    bot_token = settings.TELEGRAM_BOT_TOKEN
+    chat_id = channel.platform_channel_id
 
     bot = Bot(token=bot_token)
 
-    try:
-        if not files:
-            # فقط پیام متنی
-            bot.send_message(chat_id=chat_id, text=text)
-            return True, ""
+    async def _send():
+        try:
+            if not files:
+                await bot.send_message(chat_id=chat_id, text=text)
+                return True, ""
 
-        elif len(files) == 1:
-            # فقط یک فایل همراه با کپشن
-            file_info = files[0]
-            path = file_info["path"]
-            caption = file_info.get("caption", "")
+            elif len(files) == 1:
+                file_info = files[0]
+                path = file_info["path"]
+                caption = file_info.get("caption", "")
 
-            if path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                bot.send_photo(chat_id=chat_id, photo=open(path, 'rb'), caption=caption or text)
-            elif path.lower().endswith(('.mp4', '.mov', '.mkv')):
-                bot.send_video(chat_id=chat_id, video=open(path, 'rb'), caption=caption or text)
-            else:
-                bot.send_document(chat_id=chat_id, document=open(path, 'rb'), caption=caption or text)
-            return True, ""
-
-        else:
-            media_group = []
-            for i, f in enumerate(files):
-                path = f["path"]
-                caption = f.get("caption", "") if i == 0 else None  # فقط اولین عکس کپشن داشته باشد
-
-                if path.lower().endswith(('.jpg', '.jpeg', '.png')):
-                    media = InputMediaPhoto(media=open(path, 'rb'), caption=caption)
+                if path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                    await bot.send_photo(chat_id=chat_id, photo=open(path, 'rb'), caption=caption or text)
                 elif path.lower().endswith(('.mp4', '.mov', '.mkv')):
-                    media = InputMediaVideo(media=open(path, 'rb'), caption=caption)
+                    await bot.send_video(chat_id=chat_id, video=open(path, 'rb'), caption=caption or text)
                 else:
-                    continue  # فایل غیرقابل پشتیبانی برای آلبوم
+                    await bot.send_document(chat_id=chat_id, document=open(path, 'rb'), caption=caption or text)
+                return True, ""
 
-                media_group.append(media)
+            else:
+                media_group = []
+                for i, f in enumerate(files):
+                    path = f["path"]
+                    caption = f.get("caption", "") if i == 0 else None
 
-            if not media_group:
-                return False, "هیچ فایل تصویری یا ویدیویی قابل ارسال نبود."
-            bot.send_media_group(chat_id=chat_id, media=media_group)
-            return True, ""
+                    if path.lower().endswith(('.jpg', '.jpeg', '.png')):
+                        media = InputMediaPhoto(media=open(path, 'rb'), caption=caption)
+                    elif path.lower().endswith(('.mp4', '.mov', '.mkv')):
+                        media = InputMediaVideo(media=open(path, 'rb'), caption=caption)
+                    else:
+                        continue
+                    media_group.append(media)
 
-    except TelegramError as e:
-        return False, str(e)
+                if not media_group:
+                    return False, "هیچ فایل تصویری یا ویدیویی قابل ارسال نبود."
+
+                await bot.send_media_group(chat_id=chat_id, media=media_group)
+                return True, ""
+
+        except TelegramError as e:
+            return False, str(e)
+
+    return asyncio.run(_send())

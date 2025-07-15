@@ -1,48 +1,51 @@
+# posts.tasks.py
 from celery import shared_task
-from django.utils import timezone
-from .models import Post, MediaAttachment
+from .models import Post
 from channels.services import send_message_to_channel
+from django.utils import timezone
 
-
-@shared_task
-def send_post_task(post_id):
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_post_task(self, post_id):
     try:
         post = Post.objects.get(id=post_id)
         if post.status == 'sent':
-            return "Already sent."
+            return "Already sent"
 
         attachments = post.attachments.all()
-        text = post.content or ""
-
-        success, error = False, ""
+        text = post.content
 
         if post.types == 'text':
             success, error = send_message_to_channel(post.channel, text)
 
         elif post.types == 'media':
-            first_media = attachments.first()
-            if first_media:
-                caption = f"\n\n{first_media.caption}" if first_media.caption else ''
-                full_text = text + caption
-                success, error = send_message_to_channel(
-                    post.channel, full_text, file=first_media.file.path
-                )
-            else:
-                error = "No media provided."
+            if not attachments.exists():
+                return "No media attachment found"
+
+            files = []
+            for i, attach in enumerate(attachments):
+                files.append({
+                    "path": attach.file.path,
+                    "caption": text if i == 0 else "" 
+                })
+
+            success, error = send_message_to_channel(post.channel, None, files=files)
 
         else:
-            error = "Unsupported post type."
+            return "Unsupported post type"
 
         if success:
             post.status = 'sent'
             post.sent_at = timezone.now()
-            post.error_message = ''
+            post.save()
+            return "Sent successfully"
         else:
             post.status = 'failed'
-            post.error_message = error or 'Unknown error.'
-
-        post.save()
-        return "Sent" if success else f"Failed: {error}"
+            post.error_message = error
+            post.save()
+            return f"Failed: {error}"
 
     except Post.DoesNotExist:
-        return "Post not found"
+        return "Post does not exist"
+
+    except Exception as exc:
+        raise self.retry(exc=exc)

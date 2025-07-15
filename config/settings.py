@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'users',
     'auth_app',
     'corsheaders',
+    'channels',
+    'posts',
     
 ]
 
@@ -120,7 +122,7 @@ AUTH_USER_MODEL = 'users.User'
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Tehran'
 
 USE_I18N = True
 
@@ -180,3 +182,16 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 JWT_COOKIE_SECURE = False
 # اگر از HTTPS استفاده می‌کنی:
 # SECURE_SSL_REDIRECT = True
+
+
+
+TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN")
+
+CELERY_BROKER_URL = config('CELERY_BROKER_URL')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = config('CELERY_TASK_SERIALIZER')
+CELERY_TIMEZONE = config('CELERY_TIMEZONE')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND')
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

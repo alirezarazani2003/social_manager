@@ -5,7 +5,7 @@ from django.utils import timezone
 
 User = get_user_model()
 def user_media_path(instance, filename):
-    return f'user_{instance.post.user.id}/{filename}'
+    return f'user_{instance.post.user}/{filename}'
 
 class Post(models.Model):
     POST_STATUS_CHOICES = [

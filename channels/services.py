@@ -1,10 +1,8 @@
 import requests
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-
 from telegram import Bot, InputMediaPhoto, InputMediaVideo
 from telegram.error import TelegramError
-from channels.models import Channel
 import asyncio
 
 def verify_telegram_channel(username: str):
@@ -53,24 +51,15 @@ def verify_channel(platform: str, username: str):
         return False, _("پلتفرم ناشناخته است.")
 
 
-def send_message_to_channel(channel: Channel, text: str = "", files: list = None):
-    """
-    فایل‌ها باید لیستی از دیکشنری‌های شامل این موارد باشند:
-    [
-        {"path": "/media/path/to/image.jpg", "caption": "توضیح"},
-        {"path": "/media/another.png", "caption": ""},
-        ...
-    ]
-    """
+def send_message_to_channel(channel, text: str = "", files: list = None):
     bot_token = settings.TELEGRAM_BOT_TOKEN
     chat_id = channel.platform_channel_id
-
     bot = Bot(token=bot_token)
 
     async def _send():
         try:
             if not files:
-                await bot.send_message(chat_id=chat_id, text=text)
+                await bot.send_message(chat_id=chat_id, text=text,read_timeout=60)
                 return True, ""
 
             elif len(files) == 1:
@@ -79,11 +68,11 @@ def send_message_to_channel(channel: Channel, text: str = "", files: list = None
                 caption = file_info.get("caption", "")
 
                 if path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                    await bot.send_photo(chat_id=chat_id, photo=open(path, 'rb'), caption=caption or text)
+                    await bot.send_photo(chat_id=chat_id, photo=open(path, 'rb'), caption=caption or text,read_timeout=60)
                 elif path.lower().endswith(('.mp4', '.mov', '.mkv')):
-                    await bot.send_video(chat_id=chat_id, video=open(path, 'rb'), caption=caption or text)
+                    await bot.send_video(chat_id=chat_id, video=open(path, 'rb'), caption=caption or text,read_timeout=60)
                 else:
-                    await bot.send_document(chat_id=chat_id, document=open(path, 'rb'), caption=caption or text)
+                    await bot.send_document(chat_id=chat_id, document=open(path, 'rb'), caption=caption or text,read_timeout=60)
                 return True, ""
 
             else:
@@ -103,10 +92,20 @@ def send_message_to_channel(channel: Channel, text: str = "", files: list = None
                 if not media_group:
                     return False, "هیچ فایل تصویری یا ویدیویی قابل ارسال نبود."
 
-                await bot.send_media_group(chat_id=chat_id, media=media_group)
+                await bot.send_media_group(chat_id=chat_id, media=media_group,read_timeout=60)
                 return True, ""
 
         except TelegramError as e:
-            return False, str(e)
+            return False, f"TelegramError: {str(e)}"
+        except Exception as e:
+            return False, f"{type(e).__name__}: {str(e)}"
 
-    return asyncio.run(_send())
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            result = asyncio.ensure_future(_send())
+        else:
+            result = loop.run_until_complete(_send())
+        return result
+    except Exception as e:
+        return False, f"LoopError: {type(e).__name__}: {str(e)}"

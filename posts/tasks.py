@@ -1,4 +1,3 @@
-# posts.tasks.py
 from celery import shared_task
 from .models import Post
 from channels.services import send_message_to_channel

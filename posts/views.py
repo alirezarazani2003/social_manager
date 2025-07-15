@@ -47,6 +47,8 @@ class PostListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsEmailVerified]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Post.objects.none() 
         return Post.objects.filter(user=self.request.user).order_by('-created_at')
 
     def get_serializer_context(self):
@@ -60,6 +62,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated, IsEmailVerified]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Post.objects.none() 
         return Post.objects.filter(user=self.request.user)
 
     def get_serializer_context(self):
@@ -98,6 +102,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         return super().delete(request, *args, **kwargs)
     
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Post.objects.none() 
         return Post.objects.filter(user=self.request.user).order_by('-created_at')
 
     def get_serializer_context(self):
@@ -151,6 +157,8 @@ class ProtectedMediaView(APIView):
                 "message": "خطا در خواندن فایل."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Post.objects.none() 
         return Post.objects.filter(user=self.request.user).order_by('-created_at')
 
     def get_serializer_context(self):

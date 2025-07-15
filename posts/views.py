@@ -10,6 +10,7 @@ from auth_app.permissions import IsEmailVerified
 from rest_framework.permissions import IsAuthenticated
 from django.http import FileResponse
 from rest_framework.views import APIView
+from rest_framework.exceptions import PermissionDenied
 
 
 class PostCreateView(generics.CreateAPIView):
@@ -30,6 +31,10 @@ class PostCreateView(generics.CreateAPIView):
         return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
+        channel = serializer.validated_data.get("channel")
+        if channel.user != self.request.user:
+            raise PermissionDenied("شما اجازه ارسال پست به این کانال را ندارید.")
+        
         post = serializer.save(user=self.request.user, status='pending')
         if post.scheduled_time and post.scheduled_time > timezone.now():
             send_post_task.apply_async(args=[post.id], eta=post.scheduled_time)

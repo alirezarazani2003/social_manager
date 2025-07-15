@@ -59,7 +59,7 @@ def send_message_to_channel(channel, text: str = "", files: list = None):
     async def _send():
         try:
             if not files:
-                await bot.send_message(chat_id=chat_id, text=text,read_timeout=60)
+                await bot.send_message(chat_id=chat_id, text=text, read_timeout=60)
                 return True, ""
 
             elif len(files) == 1:
@@ -68,31 +68,33 @@ def send_message_to_channel(channel, text: str = "", files: list = None):
                 caption = file_info.get("caption", "")
 
                 if path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                    await bot.send_photo(chat_id=chat_id, photo=open(path, 'rb'), caption=caption or text,read_timeout=60)
+                    with open(path, 'rb') as f:
+                        await bot.send_photo(chat_id=chat_id, photo=f, caption=caption or text, read_timeout=60)
                 elif path.lower().endswith(('.mp4', '.mov', '.mkv')):
-                    await bot.send_video(chat_id=chat_id, video=open(path, 'rb'), caption=caption or text,read_timeout=60)
+                    with open(path, 'rb') as f:
+                        await bot.send_video(chat_id=chat_id, video=f, caption=caption or text, read_timeout=60)
                 else:
-                    await bot.send_document(chat_id=chat_id, document=open(path, 'rb'), caption=caption or text,read_timeout=60)
+                    with open(path, 'rb') as f:
+                        await bot.send_document(chat_id=chat_id, document=f, caption=caption or text, read_timeout=60)
                 return True, ""
 
             else:
                 media_group = []
-                for i, f in enumerate(files):
-                    path = f["path"]
-                    caption = f.get("caption", "") if i == 0 else None
+                for i, f_info in enumerate(files):
+                    path = f_info["path"]
+                    caption = f_info.get("caption", "") if i == 0 else None
 
                     if path.lower().endswith(('.jpg', '.jpeg', '.png')):
-                        media = InputMediaPhoto(media=open(path, 'rb'), caption=caption)
+                        media_group.append(InputMediaPhoto(media=open(path, 'rb'), caption=caption))
                     elif path.lower().endswith(('.mp4', '.mov', '.mkv')):
-                        media = InputMediaVideo(media=open(path, 'rb'), caption=caption)
+                        media_group.append(InputMediaVideo(media=open(path, 'rb'), caption=caption))
                     else:
                         continue
-                    media_group.append(media)
 
                 if not media_group:
                     return False, "هیچ فایل تصویری یا ویدیویی قابل ارسال نبود."
 
-                await bot.send_media_group(chat_id=chat_id, media=media_group,read_timeout=60)
+                await bot.send_media_group(chat_id=chat_id, media=media_group, read_timeout=60)
                 return True, ""
 
         except TelegramError as e:
@@ -101,11 +103,22 @@ def send_message_to_channel(channel, text: str = "", files: list = None):
             return False, f"{type(e).__name__}: {str(e)}"
 
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            result = asyncio.ensure_future(_send())
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            raise RuntimeError("Event loop already running")
         else:
+            if not loop:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
             result = loop.run_until_complete(_send())
-        return result
+            return result
+    except RuntimeError:
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        return new_loop.run_until_complete(_send())
     except Exception as e:
         return False, f"LoopError: {type(e).__name__}: {str(e)}"

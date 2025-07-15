@@ -15,7 +15,6 @@ def send_post_task(self, post_id):
 
         if post.types == 'text':
             success, error = send_message_to_channel(post.channel, text)
-
         elif post.types == 'media':
             if not attachments.exists():
                 return "No media attachment found"
@@ -24,17 +23,17 @@ def send_post_task(self, post_id):
             for i, attach in enumerate(attachments):
                 files.append({
                     "path": attach.file.path,
-                    "caption": text if i == 0 else "" 
+                    "caption": text if i == 0 else ""
                 })
 
             success, error = send_message_to_channel(post.channel, None, files=files)
-
         else:
             return "Unsupported post type"
 
         if success:
             post.status = 'sent'
             post.sent_at = timezone.now()
+            post.error_message = ""
             post.save()
             return "Sent successfully"
         else:

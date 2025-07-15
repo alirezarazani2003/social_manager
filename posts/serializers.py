@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Post, MediaAttachment
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 
 class MediaAttachmentSerializer(serializers.ModelSerializer):
@@ -47,4 +48,9 @@ class PostSerializer(serializers.ModelSerializer):
         for file in media_files:
             MediaAttachment.objects.create(post=post, file=file)
         return post
+    def validate_channel(self, channel):
+        request = self.context.get("request")
+        if request and channel.user != request.user:
+            raise ValidationError("این کانال متعلق به شما نیست.")
+        return channel
 

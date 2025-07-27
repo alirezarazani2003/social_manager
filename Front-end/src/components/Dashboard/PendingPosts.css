@@ -1,0 +1,133 @@
+/* === PendingPosts.css === */
+
+.pending-posts {
+  padding: 20px;
+  max-width: 100%;
+  margin: 0 auto;
+  font-family: 'Vazir', Tahoma, sans-serif;
+  direction: rtl;
+  text-align: right;
+}
+
+.pending-posts h3 {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+  color: #2d3748;
+}
+
+/* === خطا === */
+.pending-posts .error {
+  background-color: #fed7d7;
+  color: #c53030;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pending-posts .error button {
+  background-color: #feb2b2;
+  color: #742a2a;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.pending-posts .error button:hover {
+  background-color: #fc8181;
+}
+
+/* === لیست پست‌ها === */
+.posts-list {
+  margin-top: 20px;
+}
+
+/* === آیتم پست === */
+.post-item {
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.post-item:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.post-item p {
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+  color: #2d3748;
+}
+
+/* === متادیتا پست === */
+.post-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #4a5568;
+}
+
+.status-badge {
+  background-color: #faf089;
+  color: #744210;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* === ریسپانسیو === */
+@media (max-width: 768px) {
+  .pending-posts {
+    padding: 15px;
+  }
+
+  .pending-posts h3 {
+    font-size: 1.25rem;
+  }
+
+  .post-item {
+    padding: 12px;
+  }
+
+  .post-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .pending-posts {
+    padding: 12px;
+  }
+
+  .post-item {
+    padding: 10px;
+  }
+
+  .post-item p {
+    font-size: 0.9rem;
+  }
+
+  .post-meta {
+    font-size: 0.8rem;
+  }
+
+  .status-badge {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+}

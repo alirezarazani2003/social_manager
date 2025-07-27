@@ -7,40 +7,60 @@ from django.utils import timezone
 def send_post_task(self, post_id):
     try:
         post = Post.objects.get(id=post_id)
-        if post.status == 'sent':
-            return "Already sent"
+
+        # ✅ بررسی وضعیت پست: فقط اگر هنوز pending هست ادامه بده
+        if post.status != 'pending':
+            return f"Skipped: Post is in status '{post.status}'"
+
+        channels = post.channels.all()
+        if not channels.exists():
+            return "No channels found"
 
         attachments = post.attachments.all()
         text = post.content
 
-        if post.types == 'text':
-            success, error = send_message_to_channel(post.channel, text)
-        elif post.types == 'media':
-            if not attachments.exists():
-                return "No media attachment found"
+        results = []
+        for channel in channels:
+            try:
+                if post.types == 'text':
+                    success, error = send_message_to_channel(channel, text)
+                elif post.types == 'media':
+                    if not attachments.exists():
+                        results.append(f"Channel {channel.username}: No media attachment found")
+                        continue
 
-            files = []
-            for i, attach in enumerate(attachments):
-                files.append({
-                    "path": attach.file.path,
-                    "caption": text if i == 0 else ""
-                })
+                    files = []
+                    for i, attach in enumerate(attachments):
+                        files.append({
+                            "path": attach.file.path,
+                            "caption": text if i == 0 else ""
+                        })
 
-            success, error = send_message_to_channel(post.channel, None, files=files)
-        else:
-            return "Unsupported post type"
+                    success, error = send_message_to_channel(channel, None, files=files)
+                else:
+                    results.append(f"Channel {channel.username}: Unsupported post type")
+                    continue
 
-        if success:
+                if success:
+                    results.append(f"Channel {channel.username}: Sent successfully")
+                else:
+                    results.append(f"Channel {channel.username}: Failed - {error}")
+
+            except Exception as channel_error:
+                results.append(f"Channel {channel.username}: Error - {str(channel_error)}")
+
+        successful_sends = [result for result in results if "Sent successfully" in result]
+
+        if successful_sends:
             post.status = 'sent'
             post.sent_at = timezone.now()
-            post.error_message = ""
-            post.save()
-            return "Sent successfully"
+            post.error_message = "; ".join(results)
         else:
             post.status = 'failed'
-            post.error_message = error
-            post.save()
-            return f"Failed: {error}"
+            post.error_message = "; ".join(results)
+
+        post.save()
+        return "; ".join(results)
 
     except Post.DoesNotExist:
         return "Post does not exist"

@@ -1,0 +1,238 @@
+/* استایل‌های مخصوص ChannelList */
+.channel-list {
+  padding: 15px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  height: fit-content;
+}
+
+.channel-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.channel-list-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.add-channel-btn, .cancel-edit-btn {
+  padding: 5px 10px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.add-channel-btn:hover, .cancel-edit-btn:hover {
+  background-color: #1565c0;
+}
+
+.cancel-edit-btn {
+  background-color: #757575;
+}
+
+.cancel-edit-btn:hover {
+  background-color: #616161;
+}
+
+.channels {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.channel-item {
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fafafa;
+  transition: all 0.2s ease;
+}
+
+.channel-item:hover {
+  background-color: #f5f5f5;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.channel-item label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.channel-item input[type="checkbox"] {
+  margin-right: 10px;
+}
+
+.channel-name {
+  font-weight: 600;
+  color: #333;
+  margin-right: 5px;
+}
+
+.channel-username {
+  color: #666;
+  font-size: 12px;
+  margin-right: 5px;
+}
+
+.channel-status {
+  margin-right: auto;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.channel-status.verified {
+  background-color: #e8f5e8;
+  color: #4caf50;
+}
+
+.channel-status.not-verified {
+  background-color: #ffebee;
+  color: #f44336;
+}
+
+/* فرم اضافه کردن کانال */
+.add-channel-form, .edit-channel-form {
+  background-color: #f5f5f5;
+  padding: 15px;
+  border-radius: 4px;
+  margin-top: 10px;
+  border: 1px solid #e0e0e0;
+}
+
+.add-channel-form input,
+.add-channel-form select,
+.edit-channel-form input,
+.edit-channel-form select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.form-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.form-actions button[type="submit"] {
+  background-color: #4caf50;
+  color: white;
+}
+
+.form-actions button[type="submit"]:hover:not(:disabled) {
+  background-color: #43a047;
+}
+
+.form-actions button[type="submit"]:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.form-actions button[type="button"] {
+  background-color: #757575;
+  color: white;
+}
+
+.form-actions button[type="button"]:hover {
+  background-color: #616161;
+}
+
+/* دکمه‌های عملیات کانال */
+.channel-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.edit-btn, .delete-btn {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.edit-btn {
+  background-color: #ff9800;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #f57c00;
+}
+
+.delete-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #d32f2f;
+}
+
+/* ریسپانسیو */
+@media (max-width: 768px) {
+  .channel-list-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .add-channel-btn, .cancel-edit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .channel-item {
+    padding: 8px;
+  }
+  
+  .channel-name {
+    font-size: 14px;
+  }
+  
+  .channel-username {
+    font-size: 11px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
+}

@@ -13,9 +13,11 @@ class ChannelSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("شناسه کانال باید با @ شروع شود.")
 
         user = self.context['request'].user
-
+        qs = Channel.objects.filter(user=user, username=value)
+        
         if self.instance:
-            qs = Channel.objects.filter(user=user, username=value).exclude(id=self.instance.id)
+            # qs = Channel.objects.filter(user=user, username=value).exclude(id=self.instance.id)
+            qs = qs.exclude(id=self.instance.id)
         else:
             qs = Channel.objects.filter(user=user, username=value)
 

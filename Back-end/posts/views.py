@@ -10,8 +10,9 @@ from auth_app.permissions import IsEmailVerified
 from rest_framework.permissions import IsAuthenticated
 from django.http import FileResponse
 from rest_framework.views import APIView
-from rest_framework.exceptions import PermissionDenied
-
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import api_view, permission_classes
+from django.shortcuts import get_object_or_404
 
 class PostCreateView(generics.CreateAPIView):
     queryset = Post.objects.all()
@@ -20,7 +21,7 @@ class PostCreateView(generics.CreateAPIView):
 
     @swagger_auto_schema(
         operation_summary="ارسال پست (فوری یا زمان‌بندی‌شده)",
-        operation_description="این ویو به شما امکان ارسال پست متنی یا چندرسانه‌ای به یک کانال را می‌دهد. اگر `scheduled_time` مشخص شود، پست در آن زمان ارسال می‌شود.",
+        operation_description="این ویو به شما امکان ارسال پست متنی یا چندرسانه‌ای به یک یا چند کانال را می‌دهد. اگر `scheduled_time` مشخص شود، پست در آن زمان ارسال می‌شود.",
         responses={
             201: openapi.Response("پست با موفقیت ایجاد شد"),
             400: openapi.Response("خطای اعتبارسنجی داده‌ها"),
@@ -31,31 +32,38 @@ class PostCreateView(generics.CreateAPIView):
         return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        channel = serializer.validated_data.get("channel")
-        if channel.user != self.request.user:
-            raise PermissionDenied("شما اجازه ارسال پست به این کانال را ندارید.")
-        
         post = serializer.save(user=self.request.user, status='pending')
         if post.scheduled_time and post.scheduled_time > timezone.now():
             send_post_task.apply_async(args=[post.id], eta=post.scheduled_time)
         else:
             send_post_task.delay(post.id)
 
+class PostPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 
 class PostListView(generics.ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated, IsEmailVerified]
-
+    pagination_class = PostPagination
+    
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Post.objects.none() 
-        return Post.objects.filter(user=self.request.user).order_by('-created_at')
+
+        queryset = Post.objects.filter(user=self.request.user).order_by('-created_at')
+        status = self.request.query_params.get('status', None)
+        if status:
+            queryset = queryset.filter(status=status)
+            
+        return queryset
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
-
 
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PostSerializer
@@ -100,16 +108,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         return super().delete(request, *args, **kwargs)
-    
-    def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-            return Post.objects.none() 
-        return Post.objects.filter(user=self.request.user).order_by('-created_at')
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({"request": self.request})
-        return context
 
 class ProtectedMediaView(APIView):
     permission_classes = [IsAuthenticated]
@@ -156,12 +155,66 @@ class ProtectedMediaView(APIView):
                 "status": "error",
                 "message": "خطا در خواندن فایل."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-            return Post.objects.none() 
-        return Post.objects.filter(user=self.request.user).order_by('-created_at')
+            
+class CancelScheduledPostView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEmailVerified]
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({"request": self.request})
-        return context
+    @swagger_auto_schema(
+        operation_summary="لغو پست زمان‌بندی‌شده",
+        operation_description="این API به شما اجازه می‌دهد پست‌هایی که هنوز ارسال نشده‌اند (و زمان‌بندی‌شده‌اند) را لغو کنید.",
+        responses={
+            200: openapi.Response("پست با موفقیت لغو شد"),
+            400: openapi.Response("پست قبلاً ارسال شده یا لغو آن ممکن نیست"),
+            403: openapi.Response("دسترسی غیرمجاز"),
+            404: openapi.Response("پست یافت نشد")
+        }
+    )
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id, user=request.user)
+
+        if post.status != 'pending' or not post.scheduled_time:
+            return Response({
+                "detail": "امکان لغو این پست وجود ندارد. یا ارسال شده یا زمان‌بندی ندارد."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if post.scheduled_time <= timezone.now():
+            return Response({
+                "detail": "زمان ارسال پست گذشته است. امکان لغو وجود ندارد."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        post.status = 'cancelled'
+        post.save()
+
+        return Response({"detail": "پست با موفقیت لغو شد."}, status=status.HTTP_200_OK)
+    
+class RetryPostView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEmailVerified]
+
+    @swagger_auto_schema(
+        operation_summary="ارسال مجدد پست ناموفق",
+        operation_description="این API پست ناموفق را دوباره به صف ارسال می‌افزاید",
+        responses={
+            200: openapi.Response("پست با موفقیت به صف ارسال مجدد اضافه شد"),
+            400: openapi.Response("پست قابل ارسال مجدد نیست"),
+            403: openapi.Response("دسترسی غیرمجاز"),
+            404: openapi.Response("پست یافت نشد")
+        }
+    )
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id, user=request.user)
+
+        if post.status != 'failed':
+            return Response({
+                "detail": "فقط پست‌های ناموفق قابل ارسال مجدد هستند."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # تغییر وضعیت به pending و ارسال مجدد
+        post.status = 'pending'
+        post.error_message = None
+        post.save()
+        
+        send_post_task.delay(post.id)
+
+        return Response({
+            "detail": "پست با موفقیت به صف ارسال مجدد اضافه شد."
+        }, status=status.HTTP_200_OK)

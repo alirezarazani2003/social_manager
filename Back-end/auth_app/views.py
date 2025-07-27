@@ -53,17 +53,25 @@ class RequestOTPView(APIView):
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data['email']
+        try:
+            user = User.objects.get(email=email)
+            if user.is_verified:
+                return Response({'msg': 'این ایمیل قبلاً وریفای شده است.'}, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({'msg': 'کاربری با این ایمیل یافت نشد.'}, status=status.HTTP_400_BAD_REQUEST)
         EmailOTP.objects.filter(email=email, is_used=False, purpose=OTPPurpose.VERIFY).delete()
 
         otp = EmailOTP.generate_otp()
         EmailOTP.objects.create(email=email, otp=otp, purpose=OTPPurpose.VERIFY)
+
         send_mail(
             subject="کد تأیید ایمیل",
             message=f"کد شما: {otp}",
             from_email="noreply@yourdomain.com",
             recipient_list=[email]
         )
-        return Response({'msg': 'کد برای ایمیل ارسال شد.'}, status=status.HTTP_200_OK)
+
+        return Response({'msg': 'در صورت وجود حساب، کد تأیید ارسال شد.'}, status=status.HTTP_200_OK)
 
 
 class VerifyOTPView(APIView):
@@ -80,22 +88,30 @@ class VerifyOTPView(APIView):
         otp = serializer.validated_data['otp']
 
         try:
-            otp_obj = EmailOTP.objects.filter(email=email, otp=otp, is_used=False, purpose=OTPPurpose.VERIFY).latest('created_at')
+            otp_obj = EmailOTP.objects.filter(
+                email=email,
+                otp=otp,
+                is_used=False,
+                purpose=OTPPurpose.VERIFY
+            ).latest('created_at')
         except EmailOTP.DoesNotExist:
             return Response({'msg': 'کد اشتباه است یا وجود ندارد'}, status=status.HTTP_400_BAD_REQUEST)
 
         if otp_obj.is_expired():
             return Response({'msg': 'کد منقضی شده'}, status=status.HTTP_400_BAD_REQUEST)
-
+        try:
+            user = User.objects.get(email=email)
+            if user.is_verified:
+                return Response({'msg': 'ایمیل قبلاً وریفای شده است'}, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({'msg': 'کاربر یافت نشد'}, status=status.HTTP_400_BAD_REQUEST)
         otp_obj.is_used = True
         otp_obj.save()
 
-        user = User.objects.get(email=email)
         user.is_verified = True
         user.save()
 
         return Response({'msg': 'ایمیل وریفای شد.'}, status=status.HTTP_200_OK)
-
 
 class RequestLoginOTPView(APIView):
     @swagger_auto_schema(
@@ -184,7 +200,7 @@ class LoginWithOTPView(APIView):
         otp_obj.save()
 
         refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access)
+        access_token = str(refresh.access_token)
         response = Response({'msg': 'ورود موفق'}, status=status.HTTP_200_OK)
 
 

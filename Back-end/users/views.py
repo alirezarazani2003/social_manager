@@ -66,11 +66,15 @@ class LoginView(APIView):
             return error_response(message="ایمیل یا رمز اشتباه است.", status_code=status.HTTP_401_UNAUTHORIZED)
 
         if not user.is_verified:
-            return error_response(message="ایمیل شما هنوز وریفای نشده است.", status_code=status.HTTP_401_UNAUTHORIZED)
+            return error_response(
+                message="ایمیل شما هنوز وریفای نشده است.", 
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                data={'verification_required': True, 'email': email}
+            )
 
         try:
             tokens = OutstandingToken.objects.filter(user=user).order_by('created_at')
-            max_tokens = getattr(settings, 'MAX_ACTIVE_TOKENS',)
+            max_tokens = getattr(settings, 'MAX_ACTIVE_TOKENS', 5)
             tokens_to_keep = tokens[:max_tokens]
             tokens_to_blacklist = tokens[max_tokens:]
             for token in tokens_to_blacklist:

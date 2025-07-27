@@ -15,7 +15,7 @@ class IsOwner(permissions.BasePermission):
 
 
 class ChannelCreateView(generics.CreateAPIView):
-    queryset = Channel.objects.all()
+    queryset = Channel.objects.all().order_by('id')
     serializer_class = ChannelSerializer
     permission_classes = [permissions.IsAuthenticated, IsEmailVerified]
 
@@ -61,7 +61,7 @@ class ChannelCreateView(generics.CreateAPIView):
 class ChannelListView(generics.ListAPIView):
     serializer_class = ChannelSerializer
     permission_classes = [permissions.IsAuthenticated]
-
+    queryset = Channel.objects.all().order_by('-id')
     @swagger_auto_schema(
         operation_summary="لیست کانال‌های ثبت‌شده",
         operation_description="لیست کانال‌هایی که کاربر فعلی ثبت کرده را نمایش می‌دهد.",

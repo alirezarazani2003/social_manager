@@ -11,7 +11,7 @@ class Channel(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='channels')
     name = models.CharField(max_length=100, help_text='مثلاً: جامعه بزرگان')
-    username = models.CharField(max_length=100, help_text='مثلاً: @boz_community', unique=True)
+    username = models.CharField(max_length=100, help_text='مثلاً: @boz_community')
     platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
     is_verified = models.BooleanField(default=False)  # در صورت تأیید توسط ربات
     failed_reason = models.TextField(blank=True, null=True)

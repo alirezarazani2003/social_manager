@@ -13,6 +13,7 @@ class Post(models.Model):
         ('sending', 'در حال ارسال'),
         ('sent', 'ارسال شده'),
         ('failed', 'ارسال ناموفق'),
+        ('cancelled', 'لغو شده'),
     ]
 
     TEXT = 'text'
@@ -24,8 +25,8 @@ class Post(models.Model):
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
-    channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name='posts')
-    content = models.TextField()
+    channels = models.ManyToManyField(Channel, related_name='posts')
+    content = models.TextField(blank=True, null=True)
     media_files = models.JSONField(blank=True, null=True)
     scheduled_time = models.DateTimeField(blank=True, null=True) 
     status = models.CharField(max_length=10, choices=POST_STATUS_CHOICES, default='pending')
@@ -35,7 +36,8 @@ class Post(models.Model):
     types = models.CharField(max_length=10, choices=POST_TYPES)
     
     def __str__(self):
-        return f"Post {self.id} to {self.channel.username} by {self.user.email}"
+        channel_usernames = ', '.join([channel.username for channel in self.channels.all()])
+        return f"Post {self.id} to {channel_usernames} by {self.user.email}"
     
     def is_scheduled(self):
         return self.scheduled_time and self.scheduled_time > timezone.now()

@@ -1,0 +1,438 @@
+/* === FailedPosts.css === */
+
+/* === استایل اصلی کامپوننت === */
+.failed-posts {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  direction: rtl;
+  text-align: right;
+}
+
+.failed-posts h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.failed-posts .text-gray-600 {
+  color: #718096;
+}
+
+.failed-posts .error {
+  background-color: #fed7d7;
+  color: #c53030;
+  border-radius: 6px;
+}
+
+/* === لیست پست‌ها === */
+.posts-list {
+  margin-top: 20px;
+}
+
+/* === آیتم پست === */
+.post-item {
+  background-color: #fff5f5; /* قرمز کم رنگ */
+  border: 1px solid #feb2b2;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
+  word-break: break-word; /* جلوگیری از خراب شدن طرح */
+  overflow-wrap: break-word;
+}
+
+.post-item:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* === محتوای پست === */
+.post-content .font-semibold {
+  font-weight: 600;
+}
+
+.post-content .text-gray-800 {
+  color: #2d3748;
+}
+
+.post-content .text-gray-700 {
+  color: #4a5568;
+}
+
+.post-content .mb-3 {
+  margin-bottom: 12px;
+}
+
+.post-content .mt-1 {
+  margin-top: 4px;
+}
+
+.post-content .mt-2 {
+  margin-top: 8px;
+}
+
+.post-content .mt-4 {
+  margin-top: 16px;
+}
+
+.post-content .pt-3 {
+  padding-top: 12px;
+}
+
+.post-content .border-t {
+  border-top: 1px solid #e2e8f0;
+}
+
+/* === نمایش خلاصه محتوا === */
+.post-content > p {
+  background-color: #fff;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  line-height: 1.6;
+  max-height: 200px;
+  overflow-y: auto; /* اسکرول در صورت لزوم */
+}
+
+/* === بخش کانال‌ها === */
+.channels-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.channel-badge {
+  background-color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e0;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* === نوع پست === */
+.post-meta .flex {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.post-meta .gap-2 {
+  gap: 8px;
+}
+
+.post-meta .items-center {
+  align-items: center;
+}
+
+.bg-blue-100 {
+  background-color: #bee3f8;
+}
+
+.bg-gray-100 {
+  background-color: #edf2f7;
+}
+
+.text-blue-800 {
+  color: #2c5282;
+}
+
+.text-gray-800 {
+  color: #2d3748;
+}
+
+/* === پیام خطا === */
+.error-message {
+  background-color: #fed7d7;
+  border-right: 4px solid #e53e3e;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 12px;
+}
+
+.error-message .font-semibold {
+  font-weight: 600;
+}
+
+.error-message .text-red-700 {
+  color: #c53030;
+}
+
+.error-message .text-red-600 {
+  color: #e53e3e;
+}
+
+/* === دکمه‌ها === */
+.post-meta .flex-wrap {
+  flex-wrap: wrap;
+}
+
+.post-meta .gap-2 {
+  gap: 8px;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color 0.2s ease;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.bg-green-500 {
+  background-color: #48bb78;
+  color: white;
+}
+
+.bg-green-500:hover:not(:disabled) {
+  background-color: #38a169;
+}
+
+.bg-red-500 {
+  background-color: #f56565;
+  color: white;
+}
+
+.bg-red-500:hover {
+  background-color: #e53e3e;
+}
+
+.bg-gray-400 {
+  background-color: #a0aec0;
+}
+
+.text-blue-600 {
+  color: #3182ce;
+}
+
+.text-blue-600:hover {
+  color: #2b6cb0;
+  text-decoration: underline;
+}
+
+/* === صفحه‌بندی === */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  flex-wrap: wrap;
+}
+
+.pagination button {
+  padding: 8px 16px;
+}
+
+.pagination .bg-blue-500 {
+  background-color: #4299e1;
+  color: white;
+}
+
+.pagination .bg-blue-500:hover:not(:disabled) {
+  background-color: #3182ce;
+}
+
+.pagination .disabled {
+  background-color: #e2e8f0 !important;
+  cursor: not-allowed;
+}
+
+.pagination .bg-gray-100 {
+  background-color: #f7fafc;
+  color: #4a5568;
+  padding: 8px 16px;
+  border-radius: 6px;
+}
+
+
+/* === پاپ‌آپ مدیا === */
+.media-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 16px;
+  overflow: auto;
+}
+
+.media-popup-content {
+  background-color: white;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  direction: ltr; /* برای نمایش صحیح فایل‌ها */
+  text-align: left;
+}
+
+.media-popup-content h3 {
+  margin-top: 0;
+  direction: rtl;
+  text-align: right;
+}
+
+.close-popup-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #4a5568;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.close-popup-btn:hover {
+  background-color: #f7fafc;
+}
+
+.media-list {
+  margin-top: 20px;
+}
+
+.media-item {
+  margin-bottom: 20px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.media-item .text-sm {
+  font-size: 0.875rem;
+}
+
+.media-item .text-gray-600 {
+  color: #718096;
+}
+
+.media-image,
+.media-video {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.media-audio {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.media-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.media-file-icon {
+  font-size: 2rem;
+}
+
+.media-download-link {
+  color: #3182ce;
+  text-decoration: underline;
+}
+
+.media-download-link:hover {
+  color: #2b6cb0;
+}
+
+
+/* === ریسپانسیو === */
+@media (max-width: 768px) {
+  .failed-posts {
+    padding: 15px;
+  }
+
+  .post-item {
+    padding: 15px;
+  }
+
+  .channels-list {
+    gap: 6px;
+  }
+
+  .channel-badge {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+
+  .pagination {
+    gap: 10px;
+  }
+
+  .pagination button,
+  .pagination .bg-gray-100 {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .media-popup-content {
+    padding: 16px;
+    margin: 10px;
+  }
+
+  button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .post-item {
+    padding: 12px;
+  }
+
+  .post-content > p {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+
+  .channels-list {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .post-meta .flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

@@ -1,15 +1,25 @@
 from rest_framework.response import Response
 
 def success_response(message='', data=None, status_code=200):
-    return Response({
+    response_data = {
         'status': 'success',
         'message': message,
-        'data': data,
-    }, status=status_code)
+    }
+    
+    if data is not None:
+        response_data['data'] = data
+    
+    return Response(response_data, status=status_code)
 
-def error_response(message='', errors=None, status_code=400):
-    return Response({
+def error_response(message='', errors=None, status_code=400, data=None):
+    response_data = {
         'status': 'error',
         'message': message,
-        'errors': errors,
-    }, status=status_code)
+    }
+    
+    if errors is not None:
+        response_data['errors'] = errors
+    
+    if data is not None:
+        response_data.update(data)
+    return Response(response_data, status=status_code)

@@ -28,4 +28,5 @@ urlpatterns = [
     path('api/channels/', include('channels.urls')),
     path('api/posts/',include('posts.urls')),
     path('api/dashboard/', ProtectedDashboardView.as_view(), name='dashboard'),
+    path('api/chat/', include('chat.urls')),
 ] + swagger_urls.urlpatterns + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

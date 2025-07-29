@@ -1,4 +1,10 @@
 /* استایل‌های پایه و عمومی */
+/* این بخش استایل‌های اولیه و پایه برای کل صفحه و المان body را تعریف می‌کند.
+   - margin: 0: حاشیه پیش‌فرض مرورگر را حذف می‌کند.
+   - -webkit-font-smoothing و -moz-osx-font-smoothing: نرمی فونت در مرورگرهای Webkit و Firefox را بهبود می‌بخشد.
+   - direction: rtl: جهت متن را راست به چپ تنظیم می‌کند.
+   - background-color: #f5f5f5: یک رنگ پس‌زمینه خاکستری روشن برای کل صفحه تنظیم می‌کند.
+   - .App { text-align: right; }: تراز متن را در داخل کامپوننت App به راست تنظیم می‌کند. */
 body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
@@ -6,14 +12,14 @@ body {
   direction: rtl;
   background-color: #f5f5f5;
 }
-
-
-
 .App {
   text-align: right;
 }
-
 /* استایل‌های کمی برای کامپوننت‌های عمومی */
+/* این بخش استایل‌های پیش‌فرض برای نمایش پیام‌های خطا، موفقیت و بارگذاری را تعریف می‌کند.
+   - .error: برای نمایش پیام‌های خطا با رنگ قرمز و حاشیه قرمز.
+   - .success: برای نمایش پیام‌های موفقیت با رنگ سبز و حاشیه سبز.
+   - .loading: برای نمایش وضعیت بارگذاری با متن خاکستری در وسط صفحه. */
 .error {
   padding: 10px;
   margin: 10px 0;
@@ -22,7 +28,6 @@ body {
   border-radius: 4px;
   color: #f44336;
 }
-
 .success {
   padding: 10px;
   margin: 10px 0;
@@ -31,41 +36,52 @@ body {
   border-radius: 4px;
   color: #4caf50;
 }
-
 .loading {
   text-align: center;
   padding: 20px;
   color: #666;
 }
-
 /* استایل‌های پایه برای دکمه‌ها */
+/* این بخش استایل‌های پایه برای تمام دکمه‌ها را تعریف می‌کند.
+   - cursor: pointer: نشانگر ماوس را روی دکمه‌ها به صورت دست نشان می‌دهد.
+   - :disabled: استایل دکمه‌های غیرفعال شده (غیرقابل کلیک) را تعریف می‌کند. */
 button {
   cursor: pointer;
 }
-
 button:disabled {
   cursor: not-allowed;
 }
-
 /* استایل‌های پایه برای فرم‌ها */
+/* این بخش استایل‌های پایه برای المان‌های ورودی فرم (input, textarea, select) را تعریف می‌کند.
+   - font-size: inherit: اندازه فونت این المان‌ها را از والد ارث می‌برند. */
 input, textarea, select {
   font-size: inherit;
 }
-
 /* ریسپانسیو پایه */
+/* این بخش استایل‌های واکنش‌گرا برای صفحات با عرض کمتر از 768px را تعریف می‌کند.
+   - font-size: 14px: اندازه فونت را در دستگاه‌های کوچکتر کاهش می‌دهد. */
 @media (max-width: 768px) {
   body {
     font-size: 14px;
   }
 }
-
 /* استایل‌های مخصوص داشبورد */
+/* این بخش استایل‌های اصلی برای صفحه داشبورد را تعریف می‌کند.
+   - min-height: 100vh: حداقل ارتفاع صفحه را برابر با ارتفاع تمام صفحه مرورگر تنظیم می‌کند.
+   - background: linear-gradient(...): یک گرادیانت رنگی زیبا به عنوان پس‌زمینه استفاده می‌کند. */
 .dashboard {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
-
 /* هدر داشبورد */
+/* این بخش استایل‌های هدر داشبورد را تعریف می‌کند.
+   - background: rgba(...): یک پس‌زمینه نیمه‌شفاف با افکت blur.
+   - border-bottom: یک خط جداکننده در پایین هدر.
+   - box-shadow: سایه‌ای برای هدر اضافه می‌کند.
+   - .header-content: استایل‌های Flexbox برای چیدمان المان‌های داخل هدر.
+   - .dashboard-header h1: استایل‌های عنوان هدر داشبورد.
+   - .user-info: استایل‌های Flexbox برای چیدمان اطلاعات کاربر.
+   - .logout-btn: استایل‌های دکمه خروج با افکت‌های hover. */
 .dashboard-header {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
@@ -73,7 +89,6 @@ input, textarea, select {
   padding: 1rem 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
-
 .header-content {
   display: flex;
   justify-content: space-between;
@@ -81,25 +96,21 @@ input, textarea, select {
   max-width: 1400px;
   margin: 0 auto;
 }
-
 .dashboard-header h1 {
   color: white;
   margin: 0;
   font-size: 2rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
-
 .user-info {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
-
 .welcome-text {
   color: white;
   font-size: 1.1rem;
 }
-
 .logout-btn {
   background: rgba(255, 0, 0, 0.466);
   color: white;
@@ -110,14 +121,17 @@ input, textarea, select {
   transition: all 0.3s ease;
   font-size: 1rem;
 }
-
 .logout-btn:hover {
   background: rgb(255, 0, 0);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(255, 0, 0, 0.2);
 }
-
 /* محتوای داشبورد */
+/* این بخش استایل‌های چیدمان اصلی محتوای داشبورد را تعریف می‌کند.
+   - display: flex: استفاده از Flexbox برای چیدمان.
+   - max-width: 1400px: حداکثر عرض محتوا را محدود می‌کند.
+   - padding: 2rem: فاصله داخلی اطراف محتوا.
+   - gap: 2rem: فاصله بین المان‌های فلکس. */
 .dashboard-content {
   display: flex;
   max-width: 1400px;
@@ -125,8 +139,15 @@ input, textarea, select {
   padding: 2rem;
   gap: 2rem;
 }
-
 /* سایدبار */
+/* این بخش استایل‌های سایدبار را تعریف می‌کند.
+   - flex: 0 0 300px: عرض ثابت 300px برای سایدبار.
+   - background: rgba(...): پس‌زمینه نیمه‌شفاف با افکت blur.
+   - border-radius: 15px: گوشه‌های گرد.
+   - padding: 1.5rem: فاصله داخلی.
+   - box-shadow: سایه‌ای برای سایدبار.
+   - height: fit-content: ارتفاع سایدبار برابر با محتوای داخل آن.
+   - max-width: 80%: حداکثر عرض در صفحات کوچک. */
 .sidebar {
   flex: 0 0 300px;
   background: rgba(255, 255, 255, 0.95);
@@ -136,9 +157,15 @@ input, textarea, select {
   backdrop-filter: blur(10px);
   height: fit-content;
   max-width: 80%;
+  /* اضافه کردن z-index برای سایدبار */
+  z-index: 1001;
+  position: relative;
 }
-
 /* محتوای اصلی */
+/* این بخش استایل‌های بخش اصلی محتوا را تعریف می‌کند.
+   - max-width: 80%: حداکثر عرض 80%.
+   - flex: 1: این المان فضای باقی‌مانده را پر می‌کند.
+   - سایر استایل‌ها مشابه سایدبار هستند. */
 .main-content {
   max-width: 80%;
   flex: 1;
@@ -148,16 +175,44 @@ input, textarea, select {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
 }
-
-/* تب‌ها */
-.tabs {
+/* تب‌های دسکتاپ */
+/* این بخش استایل‌های تب‌های ناوبری را تعریف می‌کند.
+   - display: flex: استایل Flexbox برای چیدمان تب‌ها.
+   - gap: 0.5rem: فاصله بین تب‌ها.
+   - margin-bottom: 2rem: فاصله پایینی از محتوای بعدی.
+   - flex-wrap: wrap: در صفحات کوچک تب‌ها به خط بعدی می‌روند.
+   - tabs button: استایل‌های پایه برای دکمه‌های تب.
+   - tabs button:hover: افکت‌های hover برای تب‌ها.
+   - tabs button.active: استایل تب فعال با گرادیانت و سایه. */
+.tabs-desktop {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 2rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
 }
 
-.tabs button {
+.tabs-desktop::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tabs-desktop::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.tabs-desktop::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.tabs-desktop::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.tabs-desktop button {
   padding: 1rem 1.5rem;
   border: none;
   border-radius: 12px;
@@ -170,58 +225,166 @@ input, textarea, select {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.tabs button:hover {
+.tabs-desktop button:hover {
   background: rgba(102, 126, 234, 0.2);
   transform: translateY(-2px);
 }
 
-.tabs button.active {
+.tabs-desktop button.active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
 }
 
+/* تب‌های موبایل - مخفی در دسکتاپ */
+.tabs-mobile {
+  display: none;
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.mobile-tab-btn {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.mobile-tab-btn:hover {
+  background: rgba(102, 126, 234, 0.2);
+}
+
+.mobile-tab-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+}
+
+.arrow {
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.mobile-tab-btn.active .arrow {
+  transform: rotate(180deg);
+}
+
+.mobile-tabs-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  z-index: 100;
+}
+
+.mobile-tabs-menu.open {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.mobile-tab-item {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: right;
+  font-size: 1rem;
+  color: #333;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-tab-item:last-child {
+  border-bottom: none;
+}
+
+.mobile-tab-item:hover {
+  background-color: #f5f5f5;
+}
+
+.mobile-tab-item.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.mobile-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* background: rgba(0,0,0,0.5); */
+  display: none;
+  z-index: 99;
+}
+
+.mobile-menu-overlay.active {
+  /* display: block; */
+  padding: 2px;
+}
+
 /* محتوای تب‌ها */
+/* این بخش استایل‌های محتوای داخل هر تب را تعریف می‌کند.
+   - .tab-content: حداقل ارتفاع برای محتوای تب.
+   - .tab-content h2: استایل‌های عنوان داخل تب.
+   - .tab-content p: استایل‌های پاراگراف داخل تب.
+   - .editor-tab, .pending-tab, ...: انیمیشن‌های slideIn برای هر تب. */
 .tab-content {
   min-height: 400px;
 }
-
 .tab-content h2 {
-  color: #333;
   margin-bottom: 1rem;
   font-size: 1.5rem;
 }
-
 .tab-content p {
-  color: #666;
   font-size: 1.1rem;
   line-height: 1.6;
 }
-
-/* استایل‌های مربوط به هر تب */
 .editor-tab {
   animation: slideIn 0.5s ease;
 }
-
 .pending-tab {
   animation: slideIn 0.5s ease;
 }
-
 .scheduled-tab {
   animation: slideIn 0.5s ease;
 }
-
 .sent-tab {
   animation: slideIn 0.5s ease;
 }
-
 .failed-tab {
   animation: slideIn 0.5s ease;
 }
-
 /* پاپ‌آپ‌های بهبود یافته */
+/* این بخش استایل‌های پاپ‌آپ‌ها (Modal) را تعریف می‌کند.
+   - .modal-overlay: استایل‌های پوشش تیره پشت پاپ‌آپ.
+   - .modal: استایل‌های پنجره اصلی پاپ‌آپ.
+   - .modal-header: استایل‌های هدر پاپ‌آپ.
+   - .close-btn: استایل‌های دکمه بستن پاپ‌آپ با افکت‌های hover. */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -234,9 +397,8 @@ input, textarea, select {
   align-items: center;
   z-index: 1000;
   backdrop-filter: blur(5px);
-  animation: fadeIn 0.3s ease; /* انیمیشن باز شدن سریع */
+  animation: fadeIn 0.3s ease;
 }
-
 .modal {
   background: white;
   border-radius: 15px;
@@ -245,10 +407,9 @@ input, textarea, select {
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: modalSlideIn 0.3s ease; /* انیمیشن باز شدن سریع */
+  animation: modalSlideIn 0.3s ease;
   position: relative;
 }
-
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -257,13 +418,11 @@ input, textarea, select {
   border-bottom: 2px solid #f0f0f0;
   padding-bottom: 1rem;
 }
-
 .modal-header h3 {
   margin: 0;
   color: #333;
   font-size: 1.5rem;
 }
-
 .close-btn {
   background: none;
   border: none;
@@ -278,28 +437,34 @@ input, textarea, select {
   justify-content: center;
   border-radius: 50%;
 }
-
 .close-btn:hover {
   color: #ff4757;
   background-color: #f5f5f5;
 }
-
 /* استایل‌های بهبود یافته برای پاپ‌آپ مدیا */
+/* این بخش استایل‌های مخصوص پاپ‌آپ نمایش رسانه‌ها را تعریف می‌کند.
+   - .media-popup-overlay: استایل‌های پوشش تیره‌تر با blur قوی‌تر.
+   - .media-popup-content: استایل‌های محتوای پاپ‌آپ رسانه.
+   - .close-popup-btn: استایل‌های دکمه بستن مخصوص پاپ‌آپ رسانه.
+   - .media-popup-content h3: استایل‌های عنوان پاپ‌آپ رسانه.
+   - .media-list: استایل‌های لیست رسانه‌ها با Flexbox.
+   - .media-item: استایل‌های هر آیتم رسانه با افکت‌های hover.
+   - .media-image, .media-video, .media-audio, .media-file: استایل‌های مخصوص هر نوع رسانه.
+   - .media-download-link: استایل‌های لینک دانلود رسانه. */
 .media-popup-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.9); /* تیره‌تر شد */
+  background-color: rgba(0, 0, 0, 0.9);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(10px); /* برش‌تر شد */
-  animation: fadeIn 0.2s ease-out; /* سریع‌تر شد */
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.2s ease-out;
 }
-
 .media-popup-content {
   background: white;
   border-radius: 16px;
@@ -307,11 +472,10 @@ input, textarea, select {
   max-width: 95%;
   max-height: 95%;
   overflow-y: auto;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5); /* قوی‌تر شد */
-  animation: modalSlideIn 0.2s ease-out; /* سریع‌تر شد */
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.2s ease-out;
   position: relative;
 }
-
 .close-popup-btn {
   position: absolute;
   top: 20px;
@@ -330,12 +494,10 @@ input, textarea, select {
   transition: all 0.2s ease;
   z-index: 1001;
 }
-
 .close-popup-btn:hover {
   background: rgba(0, 0, 0, 0.9);
   transform: scale(1.1);
 }
-
 .media-popup-content h3 {
   margin: 0 0 25px 0;
   padding-right: 60px;
@@ -343,7 +505,6 @@ input, textarea, select {
   font-size: 1.8rem;
   text-align: center;
 }
-
 .media-list {
   display: flex;
   flex-wrap: wrap;
@@ -351,7 +512,6 @@ input, textarea, select {
   justify-content: center;
   padding: 20px 0;
 }
-
 .media-item {
   position: relative;
   width: 220px;
@@ -361,19 +521,16 @@ input, textarea, select {
   box-shadow: 0 8px 25px rgba(0,0,0,0.15);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
 .media-item:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 35px rgba(0,0,0,0.25);
 }
-
 .media-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 12px;
 }
-
 .media-video, .media-audio {
   width: 100%;
   height: 100%;
@@ -385,7 +542,6 @@ input, textarea, select {
   font-size: 48px;
   color: white;
 }
-
 .media-file {
   width: 100%;
   height: 100%;
@@ -398,12 +554,10 @@ input, textarea, select {
   font-size: 48px;
   color: #667eea;
 }
-
 .media-file-icon {
   font-size: 48px;
   margin-bottom: 15px;
 }
-
 .media-file-name {
   font-size: 14px;
   text-align: center;
@@ -411,7 +565,6 @@ input, textarea, select {
   word-break: break-word;
   max-width: 200px;
 }
-
 .media-download-link {
   margin-top: 15px;
   padding: 8px 15px;
@@ -423,13 +576,13 @@ input, textarea, select {
   font-weight: 500;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-
 .media-download-link:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
-
 /* دکمه‌های بهبود یافته */
+/* این بخش استایل‌های دکمه‌های مخصوص نمایش رسانه را تعریف می‌کند.
+   - .view-media-btn: استایل‌های دکمه با گرادیانت سبز و افکت‌های hover و active. */
 .view-media-btn {
   padding: 8px 16px;
   background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
@@ -442,17 +595,19 @@ input, textarea, select {
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
-
 .view-media-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
 }
-
 .view-media-btn:active {
   transform: scale(0.98);
 }
-
 /* دکمه‌های صفحه‌بندی بهبود یافته */
+/* این بخش استایل‌های دکمه‌های صفحه‌بندی را تعریف می‌کند.
+   - .pagination: استایل‌های Flexbox برای چیدمان دکمه‌های صفحه‌بندی.
+   - .pagination button: استایل‌های دکمه‌های صفحه‌بندی با گرادیانت آبی و افکت‌های hover.
+   - .pagination button:disabled: استایل‌های دکمه‌های غیرفعال.
+   - .pagination span: استایل‌های نمایش شماره صفحه فعلی. */
 .pagination {
   display: flex;
   justify-content: center;
@@ -462,7 +617,6 @@ input, textarea, select {
   padding: 20px;
   border-top: 2px solid #f0f0f0;
 }
-
 .pagination button {
   padding: 10px 20px;
   background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
@@ -475,26 +629,26 @@ input, textarea, select {
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
 }
-
 .pagination button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
 }
-
 .pagination button:disabled {
   background: #ccc;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
-
 .pagination span {
   font-size: 16px;
   font-weight: 600;
   color: #333;
 }
-
 /* انیمیشن‌های بهبود یافته */
+/* این بخش انیمیشن‌های مورد استفاده در سایت را تعریف می‌کند.
+   - @keyframes fadeIn: انیمیشن ظاهر شدن با افزایش شفافیت.
+   - @keyframes modalSlideIn: انیمیشن باز شدن پاپ‌آپ با افزایش شفافیت و تغییر اندازه.
+   - @keyframes slideIn: انیمیشن ورود المان‌ها از پایین به بالا. */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -503,7 +657,6 @@ input, textarea, select {
     opacity: 1;
   }
 }
-
 @keyframes modalSlideIn {
   from {
     opacity: 0;
@@ -514,7 +667,6 @@ input, textarea, select {
     transform: scale(1);
   }
 }
-
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -525,8 +677,11 @@ input, textarea, select {
     transform: translateY(0);
   }
 }
-
 /* لودینگ بهبود یافته */
+/* این بخش استایل‌های بهبود یافته برای نمایش لودینگ را تعریف می‌کند.
+   - display: flex: چیدمان وسط‌چین.
+   - height: 100vh: پوشش تمام صفحه.
+   - background: linear-gradient(...): گرادیانت رنگی به عنوان پس‌زمینه. */
 .loading {
   display: flex;
   justify-content: center;
@@ -536,88 +691,161 @@ input, textarea, select {
   color: white;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
+/* دکمه همبرگر */
+.hamburger-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 4px;
+  display: none;
+  z-index: 1002; /* بالاتر از اورلی */
+  position: relative;
+}
+
+.hamburger-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* استایل‌های دکمه‌های پروفایل */
+.profile-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: normal;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: rgba(255, 0, 0, 0.466);
+  color: white;
+}
+.profile-btn:hover {
+  background: rgb(255, 0, 0);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 0, 0, 0.2);
+}
 
 /* ریسپانسیو بهبود یافته */
+/* این بخش استایل‌های واکنش‌گرایی برای صفحات با عرض کمتر از 768px را تعریف می‌کند.
+   - .dashboard-content: تغییر چیدمان به ستونی.
+   - .sidebar: تغییر اندازه و موقعیت سایدبار برای موبایل.
+   - .tabs: تغییر چیدمان تب‌ها به ستونی.
+   - .header-content: تغییر چیدمان هدر برای موبایل.
+   - .media-list: تغییر چیدمان لیست رسانه‌ها برای موبایل.
+   - .pagination: تغییر چیدمان صفحه‌بندی برای موبایل. */
+@media (max-width: 1024px) {
+  .tabs-desktop button {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-content {
     flex-direction: column;
     padding: 1rem;
   }
-  
   .sidebar {
-    flex: 0 0 auto;
+    padding:0.0001%;
   }
-  
-  .tabs {
-    flex-direction: column;
+  /* مخفی کردن تب‌های دسکتاپ و نمایش تب‌های موبایل */
+  .tabs-desktop {
+    display: none;
   }
-  
-  .tabs button {
-    width: 100%;
-    justify-content: center;
+  .tabs-mobile {
+    display: block;
   }
-  
   .header-content {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
   .dashboard-header h1 {
     font-size: 1.5rem;
   }
-  
   .welcome-text {
     font-size: 1rem;
   }
-  
-  .logout-btn {
+  .logout-btn, .profile-btn {
     padding: 0.3rem 0.8rem;
     font-size: 0.9rem;
   }
-  
   .media-list {
     flex-direction: column;
     align-items: center;
   }
-  
   .media-item {
     width: 180px;
     height: 180px;
   }
-  
   .pagination {
     flex-direction: column;
     gap: 10px;
   }
-  
   .pagination button {
     width: 100%;
     justify-content: center;
   }
-  
   .pagination span {
     order: -1;
   }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 280px;
+    height: 100vh;
+    transition: right 0.3s ease;
+    z-index: 1001; /* افزایش z-index */
+    overflow-y: auto;
+    border-radius: 0;
+    margin: 0; /* حذف margin */
+  }
+  .sidebar.open {
+    right: 0;
+  }
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    z-index: 1000; /* اطمینان از z-index مناسب */
+    pointer-events: none; /* اولیه غیر فعال */
+  }
+  .sidebar-overlay.active {
+    display: block;
+    pointer-events: auto; /* فعال کردن رویدادها وقتی active هست */
+  }
+  .hamburger-btn {
+    display: block;
+  }
 }
-
 /* گرادیانت‌های زیبا */
+/* این بخش گرادیانت‌های زیباتر برای محتوای اصلی و سایدبار تعریف می‌کند. */
 .main-content {
   background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
 }
-
 .sidebar {
   background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
 }
-
 /* ظاهر حرفه‌ای */
+/* این بخش ظاهر حرفه‌ای‌تر برای هدر داشبورد تعریف می‌کند. */
 .dashboard-header {
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
 }
-
-
-
 /* استایل‌های مربوط به پروفایل */
+/* این بخش استایل‌های صفحه پروفایل کاربر را تعریف می‌کند.
+   - .profile-page: استایل‌های اصلی صفحه پروفایل.
+   - .profile-loading: استایل‌های لودینگ مخصوص صفحه پروفایل.
+   - .profile-form: استایل‌های فرم ویرایش پروفایل.
+   - .profile-info: استایل‌های نمایش اطلاعات پروفایل.
+   - .profile-actions: استایل‌های دکمه‌های عملیات پروفایل.
+   - .profile-btn: استایل‌های دکمه‌های پروفایل با رنگ‌های مختلف و افکت‌های hover. */
 .profile-page {
   padding: 20px;
   background-color: white;
@@ -625,17 +853,15 @@ input, textarea, select {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 100px); /* ارتفاع کامل منهای هدر */
+  height: calc(100vh - 100px);
   overflow: hidden;
 }
-
 .profile-page h2 {
   margin-top: 0;
   color: #333;
   font-size: 1.8rem;
   text-align: center;
 }
-
 .profile-loading {
   display: flex;
   justify-content: center;
@@ -645,25 +871,21 @@ input, textarea, select {
   color: white;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
-
 .profile-form {
   background-color: #f5f5f5;
   padding: 20px;
   border-radius: 8px;
   border: 1px solid #ddd;
 }
-
 .profile-form .form-group {
   margin-bottom: 15px;
 }
-
 .profile-form label {
   display: block;
   margin-bottom: 5px;
   font-weight: 500;
   color: #333;
 }
-
 .profile-form input {
   width: 100%;
   padding: 10px;
@@ -674,40 +896,33 @@ input, textarea, select {
   resize: vertical;
   box-sizing: border-box;
 }
-
 .profile-form input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
-
 .profile-info {
   background-color: #f9f9f9;
   padding: 20px;
   border-radius: 8px;
   border: 1px solid #ddd;
 }
-
 .profile-info div {
   margin-bottom: 15px;
 }
-
 .profile-info strong {
   color: #333;
 }
-
 .profile-info span {
   margin-left: 10px;
   color: #666;
 }
-
 .profile-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
   margin-top: 20px;
 }
-
 .profile-btn {
   padding: 10px 20px;
   border: none;
@@ -716,75 +931,298 @@ input, textarea, select {
   font-weight: 500;
   transition: all 0.3s ease;
 }
-
 .profile-btn.edit {
   background-color: #2196f3;
   color: white;
 }
-
 .profile-btn.change-password {
   background-color: #ff9800;
   color: white;
 }
-
 .profile-btn.cancel {
   background-color: #757575;
   color: white;
 }
-
 .profile-btn.save {
   background-color: #4caf50;
   color: white;
 }
-
 .profile-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
-
 .profile-btn:disabled {
   background-color: #ccc;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
-
 /* ریسپانسیو */
+/* این بخش استایل‌های واکنش‌گرایی مخصوص صفحه پروفایل را تعریف می‌کند. */
 @media (max-width: 768px) {
   .profile-page {
     padding: 15px;
     height: calc(100vh - 60px);
   }
-  
   .profile-page h2 {
     font-size: 1.5rem;
   }
-  
   .profile-form, .profile-info {
     padding: 15px;
   }
-  
   .profile-actions {
     flex-direction: column;
   }
-  
   .profile-btn {
     width: 100%;
     justify-content: center;
   }
-  
   .header-content {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
   .user-info {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
   .welcome-text {
     font-size: 1rem;
+  }
+}
+/* ---------- */
+/* این بخش استایل‌های مخصوص تب چت هوش مصنوعی را تعریف می‌کند.
+   - .ai-chat-tab: ارتفاع ثابت برای بخش چت.
+   - .chat-container: استایل‌های Flexbox برای چیدمان کانتینر چت.
+   - .chat-header: استایل‌های هدر چت با گرادیانت آبی.
+   - .messages-container: استایل‌های کانتینر پیام‌ها با اسکرول.
+   - .message: استایل‌های Flexbox برای چیدمان هر پیام.
+   - .message-bubble: استایل‌های حباب پیام با رنگ‌های مختلف برای کاربر، ربات و سیستم.
+   - .typing-indicator: استایل‌های نشانگر در حال تایپ کردن ربات.
+   - .chat-error: استایل‌های نمایش خطاهای چت.
+   - .message-form: استایل‌های فرم ارسال پیام.
+   - .message-input: استایل‌های فیلد ورودی پیام با افکت focus.
+   - .send-button: استایل‌های دکمه ارسال پیام با افکت‌های hover و disabled. */
+.ai-chat-tab {
+  height: calc(100vh - 200px);
+}
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.chat-header {
+  background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
+  color: white;
+  padding: 15px 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+.chat-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.chat-header p {
+  margin: 5px 0 0 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background-color: white;
+}
+.messages-container .empty-chat {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #999;
+}
+.messages-container .empty-chat div {
+  text-align: center;
+}
+.messages-container .empty-chat .emoji {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+.messages-container .message {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+.messages-container .message.bot {
+  justify-content: flex-start;
+}
+.messages-container .message.system {
+  justify-content: center;
+}
+.message-bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  word-wrap: break-word;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.message-bubble.user {
+  background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
+  color: white;
+}
+.message-bubble.bot {
+  background-color: #e3f2fd;
+  color: #333;
+}
+.message-bubble.system {
+  background-color: #ffebee;
+  color: #f44336;
+}
+.message-content {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.message-timestamp {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-top: 5px;
+  text-align: right;
+}
+.message-timestamp.user {
+  text-align: left;
+}
+.message-timestamp.bot {
+  text-align: right;
+}
+.message-timestamp.system {
+  text-align: center;
+}
+.typing-indicator {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+}
+.typing-indicator .message-bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background-color: #e3f2fd;
+  color: #333;
+  word-wrap: break-word;
+}
+.typing-indicator .message-content {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.chat-error {
+  padding: 10px 20px;
+  background-color: #ffebee;
+  color: #f44336;
+  text-align: center;
+  font-size: 0.9rem;
+}
+.message-form {
+  display: flex;
+  padding: 15px;
+  background-color: white;
+  border-top: 1px solid #e0e0e0;
+}
+.message-input {
+  flex: 1;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+.message-input:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+.send-button {
+  margin-left: 10px;
+  padding: 12px 20px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+.send-button:hover:not(:disabled) {
+  background-color: #0d47a1;
+}
+.send-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+/* ریسپانسیو */
+/* این بخش استایل‌های واکنش‌گرایی مخصوص صفحه چت را تعریف می‌کند. */
+@media (max-width: 768px) {
+    .sidebar {
+    position: fixed;
+    top: 0;
+    right: -280px;
+    width: 280px;
+    height: 100vh;
+    background: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    transition: right 0.3s ease;
+    z-index: 1000;
+  }
+  .sidebar.open {
+    right: 0;
+  }
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    z-index: 999;
+  }
+  .sidebar-overlay.active {
+    display: block;
+  }
+  .ai-chat-tab {
+    height: calc(100vh - 150px);
+  }
+  .message-bubble {
+    max-width: 85%;
+  }
+  .message-form {
+    padding: 10px;
+  }
+  .message-input {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  .send-button {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+  .chat-header {
+    padding: 10px 15px;
+  }
+  .chat-header h3 {
+    font-size: 1.1rem;
+  }
+  .chat-header p {
+    font-size: 0.8rem;
+  }
+  .messages-container {
+    padding: 15px;
+  }
+  .message-content {
+    font-size: 0.8rem;
+  }
+  .message-timestamp {
+    font-size: 0.6rem;
   }
 }

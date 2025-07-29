@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-0cu#)yn=jho2txxglr_d9(klwu#g!nv0u$*)#m8o!&srz+qz6k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG',cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["192.168.1.102","localhost","127.0.0.1","0.0.0.0"]
 
 
 # Application definition
@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'channels',
     'posts',
-    
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -174,8 +174,7 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
    "http://localhost:3000",
-   "http://192.168.1.102:3000"
-]
+   "http://192.168.1.102:3000"]
 CORS_ALLOW_ALL_ORIGINS = False
 
 
@@ -200,3 +199,6 @@ CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND')
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+
+AI_SERVICE_URL = config(AI_SERVICE_URL)

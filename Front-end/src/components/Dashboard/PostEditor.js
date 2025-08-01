@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import MediaGallery from './MediaGallery';
+
 const PostEditor = () => {
   const [channels, setChannels] = useState([]);
   const [selectedChannels, setSelectedChannels] = useState([]);
@@ -7,9 +9,11 @@ const PostEditor = () => {
   const [hasMedia, setHasMedia] = useState(false);
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledTime, setScheduledTime] = useState('');
-  const [mediaFiles, setMediaFiles] = useState([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  // Stateهای جدید برای مدیریت گالری
+  const [showMediaGallery, setShowMediaGallery] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState([]); // آرایه‌ای از مدیاهای انتخاب‌شده از گالری
 
   // دریافت لیست کانال‌ها
   useEffect(() => {
@@ -18,8 +22,6 @@ const PostEditor = () => {
         const response = await api.get('/channels/', {
           withCredentials: true
         });
-        
-        // چک کردن اینکه آیا response.data یه آبجکت pagination هست یا آرایه
         let channelsData = [];
         if (Array.isArray(response.data)) {
           channelsData = response.data;
@@ -29,24 +31,21 @@ const PostEditor = () => {
           console.error('Expected array but got:', response.data);
           channelsData = [];
         }
-        
         setChannels(channelsData);
       } catch (error) {
         console.error('Error fetching channels:', error);
         if (error.response?.status === 401) {
-          // احتمالاً توکن منقضی شده
           window.location.href = '/login';
         }
       }
     };
-
     fetchChannels();
   }, []);
 
   // وقتی تیک "دارای مدیا" رو برمی‌داریم، فایل‌ها رو ریست کن
   useEffect(() => {
     if (!hasMedia) {
-      setMediaFiles([]);
+      setSelectedMedia([]); // ریست کردن مدیاهای انتخاب‌شده از گالری
     }
   }, [hasMedia]);
 
@@ -59,14 +58,8 @@ const PostEditor = () => {
     );
   };
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setMediaFiles(prev => [...prev, ...files]);
-  };
-
-  // تابع برای حذف فایل انتخاب‌شده
-  const removeFile = (index) => {
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+  const removeSelectedMedia = (mediaId) => {
+    setSelectedMedia(prev => prev.filter(media => media.id !== mediaId));
   };
 
   const handleSubmit = async (e) => {
@@ -75,52 +68,43 @@ const PostEditor = () => {
       setMessage('لطفاً حداقل یک کانال انتخاب کنید');
       return;
     }
-
     if (!content && !hasMedia) {
       setMessage('لطفاً متن پست را وارد کنید یا فایل رسانه‌ای انتخاب کنید');
       return;
     }
-
-    if (hasMedia && mediaFiles.length === 0) {
-      setMessage('لطفاً فایل رسانه‌ای انتخاب کنید');
+    // بررسی اینکه حداقل یک فایل (فقط از گالری) انتخاب شده باشد
+    if (hasMedia && selectedMedia.length === 0) { // تغییر: فقط selectedMedia چک می‌شه
+      setMessage('لطفاً فایل رسانه‌ای از گالری انتخاب کنید');
       return;
     }
-
     setLoading(true);
     setMessage('');
-
     try {
       const formData = new FormData();
-      
       // اضافه کردن محتوای متنی
       if (content) {
         formData.append('content', content);
+      } else {
+        formData.append('content', '');
       }
-      else{
-        formData.append('content','')
-      }
-      
       // انتخاب کانال‌ها (چند کانال)
       selectedChannels.forEach(channelId => {
         formData.append('channels', channelId);
       });
-
       // تعیین نوع پست
       if (hasMedia) {
         formData.append('types', 'media');
-        // اضافه کردن فایل‌های رسانه‌ای
-        mediaFiles.forEach(file => {
-          formData.append('media_files', file);
+        selectedMedia.forEach(media => {
+          formData.append('existing_media_ids', media.id);
         });
+        // === پایان تغییر ===
       } else {
         formData.append('types', 'text');
       }
-
       // اگر زمان‌بندی فعال باشه
       if (isScheduled && scheduledTime) {
         formData.append('scheduled_time', scheduledTime);
       }
-
       // ارسال به سرور با آدرس صحیح
       const response = await api.post('/posts/create/', formData, {
         withCredentials: true,
@@ -128,48 +112,52 @@ const PostEditor = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-
       setMessage('پست با موفقیت ایجاد شد');
       setContent('');
-      setMediaFiles([]);
+      setSelectedMedia([]); // ریست کردن مدیاهای انتخاب‌شده از گالری
       setHasMedia(false);
       setIsScheduled(false);
       setScheduledTime('');
-      setSelectedChannels([]); // انتخاب کانال‌ها رو هم ریست کن
-      
+      setSelectedChannels([]);
     } catch (error) {
       console.error('Error details:', error.response?.data);
-      const errorMsg = error.response?.data?.types || 
-                      error.response?.data?.detail || 
-                      error.response?.data?.msg ||
-                      error.response?.data ||
-                      'خطا در ارسال پست';
-      setMessage(Array.isArray(errorMsg) ? errorMsg[0] : 
-                typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : 
-                errorMsg || 'خطا در ارسال پست');
+      const errorMsg = error.response?.data?.types ||
+        error.response?.data?.detail ||
+        error.response?.data?.msg ||
+        error.response?.data ||
+        'خطا در ارسال پست';
+      setMessage(Array.isArray(errorMsg) ? errorMsg[0] :
+        typeof errorMsg === 'object' ? JSON.stringify(errorMsg) :
+          errorMsg || 'خطا در ارسال پست');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="post-editor" style={{ 
+    <div className="post-editor" style={{
       padding: '20px',
       height: 'calc(100vh - 100px)',
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <h3 style={{ 
+      {/* پاپ‌آپ گالری مدیا */}
+      <MediaGallery
+        isOpen={showMediaGallery}
+        onClose={() => setShowMediaGallery(false)}
+        onMediaSelect={setSelectedMedia} // انتظار داره یک آرایه از مدیاها دریافت کنه
+        selectedMedia={selectedMedia} // برای نمایش مدیاهای انتخاب‌شده در گالری
+      />
+      <h3 style={{
         margin: '0 0 20px 0',
         color: '#333',
         fontSize: '1.5rem'
       }}>
         ارسال پست جدید
       </h3>
-      
       {message && (
-        <div style={{ 
-          padding: '10px', 
+        <div style={{
+          padding: '10px',
           margin: '10px 0',
           backgroundColor: message.includes('خطا') ? '#ffebee' : '#e8f5e8',
           border: `1px solid ${message.includes('خطا') ? '#f44336' : '#4caf50'}`,
@@ -178,22 +166,21 @@ const PostEditor = () => {
           {message}
         </div>
       )}
-
-      <form onSubmit={handleSubmit} style={{ 
+      <form onSubmit={handleSubmit} style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden'
       }}>
         {/* بخش اصلی فرم با اسکرول */}
-        <div style={{ 
+        <div style={{
           flex: 1,
           overflowY: 'auto',
           paddingRight: '10px'
         }}>
           {/* انتخاب کانال‌ها */}
           <div className="channel-selection" style={{ marginBottom: '20px' }}>
-            <h4 style={{ 
+            <h4 style={{
               margin: '0 0 10px 0',
               color: '#333',
               fontSize: '1.2rem'
@@ -228,7 +215,6 @@ const PostEditor = () => {
               )}
             </div>
           </div>
-
           {/* محتوای متنی - textarea ساده */}
           <div className="content-section" style={{ marginBottom: '20px' }}>
             <label htmlFor="post-content" style={{ display: 'block', marginBottom: '5px' }}>
@@ -251,136 +237,6 @@ const PostEditor = () => {
               }}
             />
           </div>
-
-          {/* نمایش پیش‌نمایش محتوا */}
-
-
-          {/* نمایش پیش‌نمایش فایل‌ها - فقط وقتی تیک "دارای مدیا" زده شده */}
-          {hasMedia && mediaFiles.length > 0 && (
-            <div className="media-preview-section" style={{ marginBottom: '20px' }}>
-              <h4 style={{ 
-                margin: '0 0 10px 0',
-                color: '#333',
-                fontSize: '1.2rem'
-              }}>
-                فایل‌های انتخاب‌شده:
-              </h4>
-              <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '10px',
-                border: '1px solid #ddd',
-                padding: '10px',
-                borderRadius: '4px',
-                backgroundColor: '#f9f9f9'
-              }}>
-                {mediaFiles.map((file, index) => (
-                  <div key={index} style={{
-                    position: 'relative',
-                    width: '100px',
-                    height: '100px'
-                  }}>
-                    {file.type.startsWith('image/') ? (
-                      // پیش‌نمایش عکس
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={file.name}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          borderRadius: '4px'
-                        }}
-                      />
-                    ) : file.type.startsWith('video/') ? (
-                      // پیش‌نمایش ویدیو
-                      <div style={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: '#e0e0e0',
-                        borderRadius: '4px',
-                        fontSize: '24px'
-                      }}>
-                        🎥
-                      </div>
-                    ) : file.type.startsWith('audio/') ? (
-                      // پیش‌نمایش صوت
-                      <div style={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: '#e0e0e0',
-                        borderRadius: '4px',
-                        fontSize: '24px'
-                      }}>
-                        🎵
-                      </div>
-                    ) : (
-                      // پیش‌نمایش فایل‌های دیگر
-                      <div style={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: '#e0e0e0',
-                        borderRadius: '4px',
-                        fontSize: '24px'
-                      }}>
-                        📄
-                      </div>
-                    )}
-                    <div style={{
-                      position: 'absolute',
-                      bottom: '2px',
-                      left: '2px',
-                      right: '2px',
-                      backgroundColor: 'rgba(0,0,0,0.7)',
-                      color: 'white',
-                      fontSize: '10px',
-                      padding: '2px',
-                      borderRadius: '2px',
-                      textAlign: 'center',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {file.name.length > 10 ? file.name.substring(0, 7) + '...' : file.name}
-                    </div>
-                    {/* دکمه حذف فایل */}
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      style={{
-                        position: 'absolute',
-                        top: '-5px',
-                        right: '-5px',
-                        background: '#f44336',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '20px',
-                        height: '20px',
-                        cursor: 'pointer',
-                        fontSize: '18px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      aria-label={`حذف فایل ${file.name}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* گزینه تعیین وجود مدیا */}
           <div className="media-toggle" style={{ marginBottom: '20px' }}>
             <label style={{ display: 'flex', alignItems: 'center' }}>
@@ -393,65 +249,67 @@ const PostEditor = () => {
               <span>پست دارای فایل رسانه‌ای است</span>
             </label>
           </div>
-
-          {/* آپلود فایل‌های رسانه‌ای - فقط وقتی گزینه تیک خورده */}
+          {/* بخش مدیا - فقط وقتی گزینه تیک خورده */}
           {hasMedia && (
             <div className="media-section" style={{ marginBottom: '20px' }}>
-              <label htmlFor="media-files" style={{ display: 'block', marginBottom: '5px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>
                 فایل‌های رسانه‌ای:
               </label>
-              <input
-                id="media-files"
-                type="file"
-                multiple
-                onChange={handleFileChange}
-                accept="image/*,video/*,audio/*"
-                className="file-input"
-                style={{ marginBottom: '10px' }}
-              />
-              
-              {mediaFiles.length > 0 && (
-                <div className="uploaded-files">
-                  <h5 style={{ 
-                    margin: '0 0 10px 0',
-                    color: '#333',
-                    fontSize: '1.1rem'
-                  }}>
-                    فایل‌های انتخاب‌شده:
-                  </h5>
-                  <div className="files-list">
-                    {mediaFiles.map((file, index) => (
-                      <div key={index} className="file-item" style={{
+              {/* فقط دکمه انتخاب از گالری */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowMediaGallery(true)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#2196f3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  انتخاب از گالری
+                </button>
+              </div>
+              {/* نمایش فایل‌های انتخاب‌شده - فقط از گالری */}
+              {selectedMedia.length > 0 && ( // تغییر: فقط selectedMedia
+                <div style={{
+                  border: '1px solid #ddd',
+                  padding: '10px',
+                  borderRadius: '4px',
+                  backgroundColor: '#f9f9f9'
+                }}>
+                  <h5>فایل‌های انتخاب‌شده:</h5>
+                  {/* مدیاهای انتخاب‌شده از گالری */}
+                  <div>
+                    <strong>از گالری:</strong>
+                    {selectedMedia.map((media) => (
+                      <div key={`selected-${media.id}`} style={{
                         display: 'flex',
-                        justifyContent: 'space-between',
                         alignItems: 'center',
+                        justifyContent: 'space-between',
                         padding: '5px',
-                        borderBottom: '1px solid #eee'
+                        backgroundColor: '#e8f5e8',
+                        borderRadius: '4px',
+                        marginBottom: '5px'
                       }}>
-                        <span>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        <span>📁 {media.title}</span>
                         <button
-                          type="button"
-                          onClick={() => removeFile(index)}
-                          className="remove-file-btn"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#f44336',
-                            cursor: 'pointer',
-                            fontSize: '18px'
-                          }}
-                          aria-label={`حذف فایل ${file.name}`}
+                          type="button" // مهم: type button باشد تا فرم submit نشه
+                          onClick={() => removeSelectedMedia(media.id)}
+                          style={{ background: 'none', border: 'none', color: '#f44336' }}
                         >
                           ×
                         </button>
                       </div>
                     ))}
                   </div>
+                  {/* // حذف شد: بخش فایل‌های جدید */}
                 </div>
               )}
             </div>
           )}
-
           {/* زمان‌بندی */}
           <div className="schedule-section" style={{ marginBottom: '20px' }}>
             <label style={{ display: 'flex', alignItems: 'center' }}>
@@ -463,7 +321,6 @@ const PostEditor = () => {
               />
               <span>زمان‌بندی ارسال</span>
             </label>
-            
             {isScheduled && (
               <div style={{ marginTop: '10px' }}>
                 <label htmlFor="scheduled-time" style={{ display: 'block', marginBottom: '5px' }}>
@@ -486,15 +343,14 @@ const PostEditor = () => {
             )}
           </div>
         </div>
-
         {/* دکمه ارسال - همیشه در پایین قرار بگیره */}
-        <div className="submit-section" style={{ 
+        <div className="submit-section" style={{
           marginTop: '20px',
           paddingTop: '20px',
           borderTop: '1px solid #eee'
         }}>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
             style={{
               padding: '10px 20px',

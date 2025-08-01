@@ -1,7 +1,8 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
-from .models import Post, MediaAttachment
-from .serializers import PostSerializer
+from rest_framework.decorators import action
+from .models import Post, MediaAttachment, UserMediaFile, UserMediaStorage
+from .serializers import PostSerializer, UserMediaSerializer, UserMediaStorageSerializer
 from .tasks import send_post_task
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
@@ -11,8 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.http import FileResponse
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import get_object_or_404
+import os
 
 class PostCreateView(generics.CreateAPIView):
     queryset = Post.objects.all()
@@ -208,7 +209,6 @@ class RetryPostView(APIView):
                 "detail": "فقط پست‌های ناموفق قابل ارسال مجدد هستند."
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # تغییر وضعیت به pending و ارسال مجدد
         post.status = 'pending'
         post.error_message = None
         post.save()
@@ -218,3 +218,50 @@ class RetryPostView(APIView):
         return Response({
             "detail": "پست با موفقیت به صف ارسال مجدد اضافه شد."
         }, status=status.HTTP_200_OK)
+        
+class UserMediaViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsEmailVerified]
+    serializer_class = UserMediaSerializer
+    
+    def get_queryset(self):
+        return UserMediaFile.objects.filter(user=self.request.user, is_active=True)
+    
+    def create(self, request, *args, **kwargs):
+        storage, created = UserMediaStorage.objects.get_or_create(user=request.user)
+        
+        if 'file' not in request.FILES:
+            return Response({'error': 'فایل ارسال نشده'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        file_size = request.FILES['file'].size
+        
+        if not storage.can_upload(file_size):
+            return Response(
+                {'error': 'فضای کافی وجود ندارد'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            media_file = serializer.save(user=request.user, file_size=file_size)
+            storage.add_used_space(file_size)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'])
+    def storage_info(self, request):
+        storage, created = UserMediaStorage.objects.get_or_create(user=request.user)
+        serializer = UserMediaStorageSerializer(storage)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def user_media_list(self, request):
+        media_files = self.get_queryset().order_by('-uploaded_at')
+        serializer = UserMediaSerializer(media_files, many=True, context={'request': request})
+        return Response(serializer.data)
+    
+    def destroy(self, request, *args, **kwargs):
+        media_file = self.get_object()
+        if media_file.file:
+            if os.path.isfile(media_file.file.path):
+                os.remove(media_file.file.path)
+        return super().destroy(request, *args, **kwargs)

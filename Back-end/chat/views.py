@@ -278,7 +278,7 @@ class ChatMessageView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def get_ai_response(self, message, session):
-            ai_service_url = getattr(settings, 'AI_SERVICE_URL', 'http://192.168.1.102:8001')
+            ai_service_url = getattr(settings, 'AI_SERVICE_URL')
             history = []
             all_messages = session.messages.all().order_by('created_at')
             for msg in all_messages:
@@ -287,6 +287,6 @@ class ChatMessageView(APIView):
                     'content': msg.content
                 })
             payload = {'message': message, 'history': history}
-            response = requests.post(f"{ai_service_url}/api/chat", json=payload, timeout=600)
+            response = requests.post(f"{ai_service_url}/api/chat",json=payload,timeout=600,proxies={"http": None, "https": None})
             response.raise_for_status()
             return response.json().get('response', 'پاسخی از سرویس دریافت نشد')

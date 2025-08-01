@@ -4,7 +4,7 @@ import Login from './components/Auth/Login';
 import LoginOTP from './components/Auth/LoginOTP';
 import Register from './components/Auth/Register';
 import ResetPassword from './components/Auth/ResetPassword';
-import VerifyEmail from './components/Auth/VerifyEmail'; // اضافه شد
+import VerifyEmail from './components/Auth/VerifyEmail';
 import ChangePassword from './components/Auth/ChangePassword';
 import Dashboard from './components/Dashboard/Dashboard';
 import ProtectedRoute from './components/HOC/ProtectedRoute';
@@ -32,5 +32,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;

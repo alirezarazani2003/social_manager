@@ -71,7 +71,7 @@ const Login = () => {
     
     try {
       const response = await axios.post(
-        'http://192.168.1.102:9999/api/users/login/',
+        process.env.REACT_APP_LOGIN_URL,
         formData,
         { withCredentials: true }
       );

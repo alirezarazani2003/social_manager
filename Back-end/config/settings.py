@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
+import os
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -141,6 +143,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'core.throttles.CustomRoleRateThrottle',
+    ],
+
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': os.getenv('THROTTLE_RATE_ANON', '10/minute'),
+        'user': os.getenv('THROTTLE_RATE_USER', '100/minute'),
+        'admin': os.getenv('THROTTLE_RATE_ADMIN', '1000/minute'),
+    },    
+
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'auth_app.authentication.CookieJWTAuthentication',
     ),
@@ -190,6 +202,7 @@ JWT_COOKIE_SECURE = False
 
 
 TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN")
+BALE_BOT_TOKEN = config("BALE_BOT_TOKEN")
 
 CELERY_BROKER_URL = config('CELERY_BROKER_URL')
 CELERY_ACCEPT_CONTENT = ['json']

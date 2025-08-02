@@ -15,10 +15,12 @@ from django.contrib.auth import update_session_auth_hash
 from decouple import config
 from django.conf import settings
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from django_ratelimit.decorators import ratelimit
+from django.http import JsonResponse
 
 
 class MeView(generics.RetrieveAPIView):
-    permission_classes = [IsAuthenticated,IsEmailVerified]
+    permission_classes = [IsAuthenticated, IsEmailVerified]
     serializer_class = UserSerializer
 
     @swagger_auto_schema(
@@ -34,7 +36,7 @@ class MeView(generics.RetrieveAPIView):
 
 
 class ProtectedDashboardView(APIView):
-    permission_classes = [IsAuthenticated,IsEmailVerified]
+    permission_classes = [IsAuthenticated, IsEmailVerified]
 
     def get(self, request: Any) -> Response:
         return Response({
@@ -42,10 +44,13 @@ class ProtectedDashboardView(APIView):
             "email": request.user.email
         })
 
+
+@ratelimit(key='post:email', rate='3/10m', block=True)
 class RequestOTPView(APIView):
     @swagger_auto_schema(
         request_body=RequestOTPSerializer,
-        responses={200: openapi.Response(description="OTP با موفقیت ارسال شد")},
+        responses={200: openapi.Response(
+            description="OTP با موفقیت ارسال شد")},
         operation_summary="ارسال کد OTP برای تایید ایمیل"
     )
     def post(self, request: Any) -> Response:
@@ -59,10 +64,12 @@ class RequestOTPView(APIView):
                 return Response({'msg': 'این ایمیل قبلاً وریفای شده است.'}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
             return Response({'msg': 'کاربری با این ایمیل یافت نشد.'}, status=status.HTTP_400_BAD_REQUEST)
-        EmailOTP.objects.filter(email=email, is_used=False, purpose=OTPPurpose.VERIFY).delete()
+        EmailOTP.objects.filter(
+            email=email, is_used=False, purpose=OTPPurpose.VERIFY).delete()
 
         otp = EmailOTP.generate_otp()
-        EmailOTP.objects.create(email=email, otp=otp, purpose=OTPPurpose.VERIFY)
+        EmailOTP.objects.create(email=email, otp=otp,
+                                purpose=OTPPurpose.VERIFY)
 
         send_mail(
             subject="کد تأیید ایمیل",
@@ -113,6 +120,7 @@ class VerifyOTPView(APIView):
 
         return Response({'msg': 'ایمیل وریفای شد.'}, status=status.HTTP_200_OK)
 
+
 class RequestLoginOTPView(APIView):
     @swagger_auto_schema(
         request_body=RequestOTPSerializer,
@@ -135,9 +143,11 @@ class RequestLoginOTPView(APIView):
             if not user.is_active:
                 return Response({'msg': 'اکانت شما غیرفعال است.'}, status=status.HTTP_403_FORBIDDEN)
 
-            EmailOTP.objects.filter(email=email, is_used=False, purpose=OTPPurpose.LOGIN).delete()
+            EmailOTP.objects.filter(
+                email=email, is_used=False, purpose=OTPPurpose.LOGIN).delete()
             otp = EmailOTP.generate_otp()
-            EmailOTP.objects.create(email=email, otp=otp, purpose=OTPPurpose.LOGIN)
+            EmailOTP.objects.create(
+                email=email, otp=otp, purpose=OTPPurpose.LOGIN)
 
             send_mail(
                 subject="کد ورود",
@@ -171,7 +181,8 @@ class LoginWithOTPView(APIView):
             return Response({'msg': 'ایمیل و کد OTP الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            otp_obj = EmailOTP.objects.filter(email=email, otp=otp, is_used=False, purpose=OTPPurpose.LOGIN).latest('created_at')
+            otp_obj = EmailOTP.objects.filter(
+                email=email, otp=otp, is_used=False, purpose=OTPPurpose.LOGIN).latest('created_at')
         except EmailOTP.DoesNotExist:
             return Response({'msg': 'کد اشتباه است یا وجود ندارد'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -185,9 +196,10 @@ class LoginWithOTPView(APIView):
 
         if not user.is_verified:
             return Response({'msg': 'ایمیل هنوز وریفای نشده'}, status=status.HTTP_403_FORBIDDEN)
-        
+
         try:
-            tokens = OutstandingToken.objects.filter(user=user).order_by('created_at')
+            tokens = OutstandingToken.objects.filter(
+                user=user).order_by('created_at')
             max_tokens = getattr(settings, 'MAX_ACTIVE_TOKENS',)
             tokens_to_keep = tokens[:max_tokens]
             tokens_to_blacklist = tokens[max_tokens:]
@@ -195,14 +207,13 @@ class LoginWithOTPView(APIView):
                 BlacklistedToken.objects.get_or_create(token=token)
         except Exception as e:
             print("Token cleanup error:", e)
-            
+
         otp_obj.is_used = True
         otp_obj.save()
 
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
         response = Response({'msg': 'ورود موفق'}, status=status.HTTP_200_OK)
-
 
         response.set_cookie(
             key='access',
@@ -221,7 +232,7 @@ class LoginWithOTPView(APIView):
             samesite='Lax',
             max_age=config('REFRESH_TOKEN_DAYS', cast=int) * 24 * 3600
         )
-        
+
         return response
 
 
@@ -249,9 +260,11 @@ class RequestResetPasswordOTPView(APIView):
         try:
             user = User.objects.get(email=email)
 
-            EmailOTP.objects.filter(email=email, is_used=False, purpose=OTPPurpose.RESET).delete()
+            EmailOTP.objects.filter(
+                email=email, is_used=False, purpose=OTPPurpose.RESET).delete()
             otp = EmailOTP.generate_otp()
-            EmailOTP.objects.create(email=email, otp=otp, purpose=OTPPurpose.RESET)
+            EmailOTP.objects.create(
+                email=email, otp=otp, purpose=OTPPurpose.RESET)
 
             send_mail(
                 subject="کد بازیابی رمز عبور",
@@ -292,7 +305,8 @@ class ResetPasswordWithOTPView(APIView):
             return Response({'msg': 'ایمیل، کد OTP و رمز جدید باید ارسال شود'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            otp_obj = EmailOTP.objects.filter(email=email, otp=otp, is_used=False, purpose=OTPPurpose.RESET).latest('created_at')
+            otp_obj = EmailOTP.objects.filter(
+                email=email, otp=otp, is_used=False, purpose=OTPPurpose.RESET).latest('created_at')
             if otp_obj.is_expired():
                 return Response({'msg': 'کد منقضی شده'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -351,7 +365,7 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        request_body=None, 
+        request_body=None,
         responses={
             205: openapi.Response(description="خروج موفق"),
             400: openapi.Response(description="توکن رفرش در کوکی‌ها پیدا نشد"),
@@ -370,8 +384,9 @@ class LogoutView(APIView):
             token.blacklist()
         except Exception:
             pass
-        
-        response = Response({'msg': 'خروج موفق'}, status=status.HTTP_205_RESET_CONTENT)
+
+        response = Response({'msg': 'خروج موفق'},
+                            status=status.HTTP_205_RESET_CONTENT)
         response.delete_cookie('access')
         response.delete_cookie('refresh')
         return response
@@ -413,7 +428,8 @@ class CookieTokenRefreshView(APIView):
         except Exception:
             return Response({'msg': 'توکن نامعتبر است'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        response = Response({'msg': 'توکن جدید صادر شد'}, status=status.HTTP_200_OK)
+        response = Response({'msg': 'توکن جدید صادر شد'},
+                            status=status.HTTP_200_OK)
         response.set_cookie(
             key='access',
             value=access_token,

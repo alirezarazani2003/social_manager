@@ -6,3 +6,4 @@ djangorestframework-simplejwt
 python-telegram-bot
 celery
 redis
+django-ratelimit

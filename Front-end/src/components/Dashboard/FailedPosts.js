@@ -200,7 +200,7 @@ const FailedPosts = () => {
                         post.channels.map((channelId) => (
                           <span key={channelId} className="channel-badge inline-block bg-white px-2 py-1 rounded border text-xs">
                             {channelCache[channelId] ? (
-                              `${channelCache[channelId].name} (${channelCache[channelId].username})`
+                              `${channelCache[channelId].name} (${channelCache[channelId].platform})`
                             ) : channelLoading[channelId] ? (
                               'در حال بارگذاری...'
                             ) : (
@@ -211,7 +211,7 @@ const FailedPosts = () => {
                       ) : (
                         <span className="channel-badge inline-block bg-white px-2 py-1 rounded border text-xs">
                           {channelCache[post.channel] ? (
-                            `${channelCache[post.channel].name} (${channelCache[post.channel].username})`
+                            `${channelCache[post.channel].name} (${channelCache[post.channel].platform})`
                           ) : channelLoading[post.channel] ? (
                             'در حال بارگذاری...'
                           ) : (

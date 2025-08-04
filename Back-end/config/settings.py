@@ -40,7 +40,7 @@ LOGGING = {
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0cu#)yn=jho2txxglr_d9(klwu#g!nv0u$*)#m8o!&srz+qz6k'
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG',cast=bool)
@@ -175,17 +175,17 @@ SIMPLE_JWT = {
     
 }
 
-JWT_COOKIE_NAME = 'access'
-JWT_COOKIE_REFRESH_NAME = 'refresh'
-JWT_COOKIE_SECURE = True
-JWT_COOKIE_HTTPONLY = True
+JWT_COOKIE_NAME =config("JWT_COOKIE_NAME")
+JWT_COOKIE_REFRESH_NAME =config("JWT_COOKIE_REFRESH_NAME")
+JWT_COOKIE_SECURE = config("JWT_COOKIE_SECURE",cast=bool)
+JWT_COOKIE_HTTPONLY = config("JWT_COOKIE_HTTPONLY",cast=bool)
 MAX_ACTIVE_TOKENS = config('MAX_ACTIVE_TOKENS', cast=int)
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND =config("EMAIL_BACKEND")
 EMAIL_HOST = config("EMAIL_HOST")
 EMAIL_PORT = int(config("EMAIL_PORT"))
-EMAIL_USE_TLS = True
+EMAIL_USE_TLS = config("EMAIL_USE_TLS",cast=bool)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
@@ -209,12 +209,12 @@ JWT_COOKIE_SECURE = False
 
 
 TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN")
+BALE_BOT_TOKEN = config("BALE_BOT_TOKEN")
 
-
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  
+CELERY_BROKER_URL =config("CELERY_BROKER_URL") 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND")  
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

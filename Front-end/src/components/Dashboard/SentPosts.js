@@ -112,7 +112,7 @@ const SentPosts = () => {
                         post.channels.map(channelId => (
                           <span key={channelId} className="channel-badge">
                             {channelCache[channelId] ? (
-                              `${channelCache[channelId].name} (${channelCache[channelId].username})`
+                              `${channelCache[channelId].name} (${channelCache[channelId].platform})`
                             ) : channelLoading[channelId] ? (
                               'در حال بارگذاری...'
                             ) : (
@@ -128,7 +128,7 @@ const SentPosts = () => {
                         // اگه فقط یه کانال باشه (ساختار قدیمی)
                         <span className="channel-badge">
                           {channelCache[post.channel] ? (
-                            `${channelCache[post.channel].name} (${channelCache[post.channel].username})`
+                            `${channelCache[post.channel].name} (${channelCache[post.channel].platform})`
                           ) : channelLoading[post.channel] ? (
                             'در حال بارگذاری...'
                           ) : (

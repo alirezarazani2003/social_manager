@@ -208,7 +208,7 @@ const PostEditor = () => {
                         onChange={() => toggleChannel(channel.id)}
                         style={{ marginRight: '10px' }}
                       />
-                      <span>{channel.name} ({channel.username})</span>
+                      <span>{channel.name} ({channel.username} - {channel.platform}) </span>
                     </label>
                   </div>
                 ))

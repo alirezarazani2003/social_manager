@@ -176,7 +176,7 @@ const ChannelList = () => {
                 <>
                   <label htmlFor={`channel-${channel.id}`} style={{ flex: 1, cursor: 'pointer' }}>
                     <span className="channel-name">{channel.name}</span>
-                    <span className="channel-username">({channel.username})</span>
+                    <span className="channel-username">({channel.platform})</span>
                     <span className={`channel-status ${channel.is_verified ? 'verified' : 'not-verified'}`}>
                       {channel.is_verified ? '✓ وریفای شده' : '✗ وریفای نشده'}
                     </span>

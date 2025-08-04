@@ -167,7 +167,7 @@ const MediaGallery = ({ isOpen, onClose, onMediaSelect, selectedMedia }) => {
               id="gallery-upload"
               type="file"
               onChange={handleFileUpload}
-              accept="image/*,video/*,audio/*"
+              accept="*/*"
               disabled={loading}
               className="media-gallery-upload-input"
             />

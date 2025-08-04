@@ -60,7 +60,7 @@ const PendingPosts = () => {
 
     return channelIds.map((id) => {
       const cached = channelCache[id];
-      if (cached) return `${cached.name} (@${cached.username})`;
+      if (cached) return `${cached.name} (@${cached.platform})`;
       if (!channelLoading[id]) fetchChannelInfo(id);
       return 'در حال بارگذاری...';
     }).join('، ');

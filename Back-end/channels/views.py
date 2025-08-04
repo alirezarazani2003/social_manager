@@ -5,7 +5,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .models import Channel
 from .serializers import ChannelSerializer
-from .services import verify_telegram_channel
+from .services import verify_telegram_channel, verify_bale_channel
 from auth_app.permissions import IsEmailVerified
 
 
@@ -37,6 +37,8 @@ class ChannelCreateView(generics.CreateAPIView):
 
         if platform == 'telegram':
             is_ok, result = verify_telegram_channel(username)
+        elif platform == 'bale':
+            is_ok, result = verify_bale_channel(username)
         else:
             return Response({"detail": _("پلتفرم نامعتبر است.")}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -57,11 +59,11 @@ class ChannelCreateView(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-
 class ChannelListView(generics.ListAPIView):
     serializer_class = ChannelSerializer
     permission_classes = [permissions.IsAuthenticated]
     queryset = Channel.objects.all().order_by('-id')
+
     @swagger_auto_schema(
         operation_summary="لیست کانال‌های ثبت‌شده",
         operation_description="لیست کانال‌هایی که کاربر فعلی ثبت کرده را نمایش می‌دهد.",
@@ -77,7 +79,8 @@ class ChannelListView(generics.ListAPIView):
 class ChannelDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Channel.objects.all()
     serializer_class = ChannelSerializer
-    permission_classes = [permissions.IsAuthenticated, IsEmailVerified, IsOwner]
+    permission_classes = [
+        permissions.IsAuthenticated, IsEmailVerified, IsOwner]
 
     @swagger_auto_schema(
         operation_summary="مشاهده اطلاعات کانال",
@@ -103,7 +106,8 @@ class ChannelDetailView(generics.RetrieveUpdateDestroyAPIView):
     )
     def put(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=False)
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=False)
         serializer.is_valid(raise_exception=True)
         new_username = serializer.validated_data.get('username')
         new_platform = serializer.validated_data.get('platform')
@@ -112,10 +116,12 @@ class ChannelDetailView(generics.RetrieveUpdateDestroyAPIView):
             is_ok, result = verify_channel(new_platform, new_username)
             if not is_ok:
                 return Response(
-                    {"detail": _("عدم توانایی در تأیید کانال پس از ویرایش"), "reason": result},
+                    {"detail": _(
+                        "عدم توانایی در تأیید کانال پس از ویرایش"), "reason": result},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            serializer.save(is_verified=True, failed_reason="", platform_channel_id=result)
+            serializer.save(is_verified=True, failed_reason="",
+                            platform_channel_id=result)
         else:
             serializer.save()
 
@@ -132,4 +138,3 @@ class ChannelDetailView(generics.RetrieveUpdateDestroyAPIView):
     )
     def delete(self, request, *args, **kwargs):
         return super().delete(request, *args, **kwargs)
-

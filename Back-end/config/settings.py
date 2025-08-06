@@ -169,13 +169,11 @@ REST_FRAMEWORK = {
         'anon': '10/minute',
         'user': '100/minute',
         'admin': '1000/minute',
+        'otp_request': '5/minute',
     },
     'DEFAULT_THROTTLE_CLASSES': [
         'config.throttles.RequestOTPThrottle',
     ],
-    'DEFAULT_THROTTLE_RATES': {
-        'otp_request': '5/minute',
-    },
 
 
     'DEFAULT_AUTHENTICATION_CLASSES': (

@@ -15,10 +15,3 @@ class ChannelInline(admin.TabularInline):  # یا StackedInline
 class UserAdmin(admin.ModelAdmin):
     inlines = [UserMediaStorageInline, ChannelInline]
     list_display = ('email', 'first_name', 'last_name')
-
-
-admin.site.register(PeriodicTask)
-admin.site.register(IntervalSchedule)
-admin.site.register(CrontabSchedule)
-admin.site.register(SolarSchedule)
-admin.site.register(ClockedSchedule)

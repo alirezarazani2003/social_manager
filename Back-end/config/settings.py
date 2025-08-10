@@ -43,7 +43,7 @@ LOGGING = {
 SECRET_KEY = 'django-insecure-0cu#)yn=jho2txxglr_d9(klwu#g!nv0u$*)#m8o!&srz+qz6k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG',cast=bool)
+DEBUG = config('DEBUG', cast=bool)
 
 ALLOWED_HOSTS = []
 
@@ -160,11 +160,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
-        'rest_framework.throttling.AdminRateThrottle',
-    ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/minute',
         'user': '100/minute',
@@ -173,6 +168,9 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_THROTTLE_CLASSES': [
         'config.throttles.RequestOTPThrottle',
+        'config.throttles.RoleBasedRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
     ],
 
 
@@ -184,12 +182,11 @@ REST_FRAMEWORK = {
 }
 
 
-
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=config('ACCESS_TOKEN_MINUTES', cast=int)),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=config('REFRESH_TOKEN_DAYS', cast=int)),
     'BLACKLIST_AFTER_ROTATION': True,
-    
+
 }
 
 JWT_COOKIE_NAME = 'access'
@@ -209,10 +206,9 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-   "http://localhost:3000",
-   "http://192.168.1.102:3000"]
+    "http://localhost:3000",
+    "http://192.168.1.102:3000"]
 CORS_ALLOW_ALL_ORIGINS = False
-
 
 
 SESSION_COOKIE_SECURE = not DEBUG
@@ -224,14 +220,13 @@ JWT_COOKIE_SECURE = False
 # SECURE_SSL_REDIRECT = True
 
 
-
 TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN")
 
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

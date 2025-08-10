@@ -15,12 +15,11 @@ from django.contrib.auth import update_session_auth_hash
 from decouple import config
 from django.conf import settings
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
-# from django_ratelimit.decorators import ratelimit
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from config.throttles import RequestOTPThrottle
+from config.throttles import RequestOTPThrottle, RoleBasedRateThrottle
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 
@@ -51,9 +50,8 @@ class ProtectedDashboardView(APIView):
         })
 
 
-# @method_decorator(ratelimit(key='post:email', rate='3/10m', block=True), name='dispatch')
 class RequestOTPView(APIView):
-    throttle_classes = [RequestOTPThrottle]
+    throttle_classes = [RequestOTPThrottle, RoleBasedRateThrottle]
 
     @swagger_auto_schema(
         request_body=RequestOTPSerializer,
@@ -90,6 +88,8 @@ class RequestOTPView(APIView):
 
 
 class VerifyOTPView(APIView):
+    throttle_classes = [RequestOTPThrottle, RoleBasedRateThrottle]
+
     @swagger_auto_schema(
         request_body=VerifyOTPSerializer,
         responses={200: openapi.Response(description="ایمیل وریفای شد")},
@@ -130,6 +130,8 @@ class VerifyOTPView(APIView):
 
 
 class RequestLoginOTPView(APIView):
+    throttle_classes = [RequestOTPThrottle, RoleBasedRateThrottle]
+
     @swagger_auto_schema(
         request_body=RequestOTPSerializer,
         responses={
@@ -169,6 +171,8 @@ class RequestLoginOTPView(APIView):
 
 
 class LoginWithOTPView(APIView):
+    throttle_classes = [RequestOTPThrottle, RoleBasedRateThrottle]
+
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
@@ -207,7 +211,7 @@ class LoginWithOTPView(APIView):
 
         try:
             tokens = OutstandingToken.objects.filter(
-                user=user).order_by('created_at')
+                user=user, ).order_by('created_at')
             max_tokens = getattr(settings, 'MAX_ACTIVE_TOKENS',)
             tokens_to_keep = tokens[:max_tokens]
             tokens_to_blacklist = tokens[max_tokens:]
@@ -245,6 +249,8 @@ class LoginWithOTPView(APIView):
 
 
 class RequestResetPasswordOTPView(APIView):
+    throttle_classes = [RequestOTPThrottle, RoleBasedRateThrottle]
+
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
@@ -286,6 +292,8 @@ class RequestResetPasswordOTPView(APIView):
 
 
 class ResetPasswordWithOTPView(APIView):
+    throttle_classes = [RequestOTPThrottle, RoleBasedRateThrottle]
+
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
@@ -333,6 +341,7 @@ class ResetPasswordWithOTPView(APIView):
 
 
 class ChangePasswordView(APIView):
+    throttle_classes = [RequestOTPThrottle, RoleBasedRateThrottle]
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
@@ -371,6 +380,7 @@ class ChangePasswordView(APIView):
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [RequestOTPThrottle, RoleBasedRateThrottle]
 
     @swagger_auto_schema(
         request_body=None,
@@ -401,6 +411,8 @@ class LogoutView(APIView):
 
 
 class CookieTokenRefreshView(APIView):
+    throttle_classes = [RequestOTPThrottle, RoleBasedRateThrottle]
+
     @swagger_auto_schema(
         operation_summary="تجدید توکن دسترسی با استفاده از توکن رفرش کوکی",
         operation_description="توکن رفرش را از کوکی دریافت می‌کند و در صورت معتبر بودن توکن جدید دسترسی (Access Token) را صادر می‌کند و در کوکی ذخیره می‌کند.",

@@ -1,8 +1,23 @@
 import logging
 from threading import current_thread
+import re
 
 _local = {}
 
+class TelegramRequestFilter(logging.Filter):
+    TOKEN_PATTERN = re.compile(r"(bot\d+:[A-Za-z0-9_\-]+)")
+
+    def filter(self, record):
+        msg = record.getMessage()
+
+        if 'api.telegram.org' in msg:
+            masked_msg = self.TOKEN_PATTERN.sub(r"bot***:***", msg)
+            record.msg = masked_msg
+            record.args = ()
+        return True
+    
+    
+    
 class ContextFilter(logging.Filter):
     def filter(self, record):
         ctx = _local.get(current_thread().ident, {})

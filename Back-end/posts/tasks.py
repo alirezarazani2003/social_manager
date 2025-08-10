@@ -4,9 +4,6 @@ from celery import shared_task
 from .models import Post
 from channels.services import send_message_to_channel
 from django.utils import timezone
-from django.core.mail import send_mail
-from django.conf import settings
-from datetime import datetime
 
 task_logger = logging.getLogger('posts.task')
 
@@ -79,7 +76,6 @@ def send_post_task(self, post_id):
         post.error_message = "; ".join(results)
         post.save()
 
-        # لاگ نهایی
         if post.status == 'sent':
             task_logger.info(f"Post {post_id} sent successfully to {successful_sends}/{len(channels)} channels")
         else:

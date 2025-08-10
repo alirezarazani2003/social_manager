@@ -410,13 +410,15 @@ const EditChannelForm = ({ channel, onUpdate, onCancel, isLoading }) => {
           value={formData.username}
           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
           required
+          dir="ltr"
           disabled={isLoading}
           style={{
             width: '100%',
             padding: '5px',
             border: '1px solid #ddd',
             borderRadius: '4px',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            dir:'ltr'
           }}
         />
       </div>

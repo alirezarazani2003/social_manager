@@ -13,12 +13,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
-import os
+from celery.schedules import crontab
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-ADMINS = [
-    ('Ali Reza', 'alirezarazani3185@gmail.com'),
-]
 
 
 # Quick-start development settings - unsuitable for production
@@ -65,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.CriticalErrorAlertMiddleware'
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -203,15 +201,19 @@ CELERY_BROKER_URL =config("CELERY_BROKER_URL")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND")  
+
+DAILY_REPORT_HOUR = config('CELERY_TASK_DAILY_REPORT_HOUR',cast=int)
+DAILY_REPORT_MINUTE = config('CELERY_TASK_DAILY_REPORT_MINUTE',cast=int)
+HEALTH_CHECK_INTERVAL = config('CELERY_TASK_HEALTH_CHECK_INTERVAL',cast=float)
+
 CELERY_BEAT_SCHEDULE = {
     'daily-log-report': {
         'task': 'core.tasks.daily_log_report',
-        'schedule': 30.0,  #تست
-        # 'schedule': crontab(hour=0, minute=0),
+        'schedule': crontab(hour=21, minute=42),
     },
     'health-check': {
     'task': 'core.tasks.health_check',
-    'schedule': 31.0,  # هر 10 دقیقه
+    'schedule': 600.0,
     },
 }
 CELERY_TIMEZONE = 'Asia/Tehran'
@@ -233,6 +235,9 @@ LOGGING = {
     'context': {
         '()': 'core.logging_filters.ContextFilter',
         },
+    'hide_telegram_requests': {
+        '()': 'core.logging_filters.TelegramRequestFilter',
+        },
     },
     'formatters': {
         'verbose': {
@@ -252,7 +257,7 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 7,
             'formatter': 'verbose',
-            'filters': ['context'],
+            'filters': ['context','hide_telegram_requests'],
         },
         'file_error': {
             'level': 'ERROR',
@@ -266,6 +271,8 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
+            'filters': ['hide_telegram_requests'],
+            
         },
     },
     'loggers': {
@@ -313,6 +320,24 @@ LOGGING = {
             'handlers': ['file_all','console'],
             'level': 'INFO',
             'propagate': False,
+        },
+        'urllib3': {
+            'handlers': ['file_all', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+            'filters': ['hide_telegram_requests'],
+        },
+        'urllib3.connectionpool': {
+            'handlers': ['file_all', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+            'filters': ['hide_telegram_requests'],
+        },
+        'requests': {
+            'handlers': ['file_all', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+            'filters': ['hide_telegram_requests'],
         },
     },
 }

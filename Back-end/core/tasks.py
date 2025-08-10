@@ -1,20 +1,23 @@
 from celery import shared_task
 import logging
+import zipfile
+from pathlib import Path
+from datetime import datetime
+from django.conf import settings
+import psutil
+from django.db import connection
+from django.conf import settings
+from django.core.mail import EmailMessage
+import logging
 
 task_logger = logging.getLogger('core.task')
 
 @shared_task
 def daily_log_report():
-    from django.core.mail import send_mail
-    from pathlib import Path
-    from django.conf import settings
-    from datetime import datetime
-
     LOGS_DIR = Path(settings.BASE_DIR) / 'logs'
-    log_file = LOGS_DIR / 'all.log'
     today_str = datetime.now().strftime('%Y-%m-%d')
 
-    task_logger.info(f"Starting daily log report for {today_str}")
+    task_logger.info(f"Starting daily log report and backup for {today_str}")
 
     report = {
         "users": {
@@ -41,54 +44,62 @@ def daily_log_report():
         },
     }
 
-    if not log_file.exists():
-        task_logger.warning("Log file not found!")
-        return "Log file not found."
+    if not LOGS_DIR.exists():
+        task_logger.error("Logs directory not found!")
+        return "Logs directory missing."
 
-    try:
-        with open(log_file, 'r', encoding='utf-8') as f:
-            for line in f:
-                if today_str not in line:
-                    continue
+    log_files = [f for f in LOGS_DIR.iterdir() if f.is_file() and (f.suffix in ['.log', '.txt'] or 'log' in f.name)]
+    if not log_files:
+        task_logger.warning("No log files to process.")
+    else:
+        for log_file in log_files:
+            try:
+                with open(log_file, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if today_str not in line:
+                            continue
 
-                if 'registered successfully' in line and 'User' in line:
-                    report["users"]["registrations"] += 1
-                    ip = extract_value(line, 'IP=')
-                    report["users"]["top_ips"][ip] = report["users"]["top_ips"].get(ip, 0) + 1
-                if 'logged in successfully' in line and 'User' in line:
-                    report["users"]["login_count"] += 1
-                    ip = extract_value(line, 'IP=')
-                    report["users"]["top_ips"][ip] = report["users"]["top_ips"].get(ip, 0) + 1
-                if 'Failed login attempt' in line and 'IP=' in line:
-                    report["users"]["failed_logins"] += 1
-                    ip = extract_value(line, 'IP=')
-                    report["users"]["top_ips"][ip] = report["users"]["top_ips"].get(ip, 0) + 1
-                if 'Post ' in line and 'created by user' in line and 'User' in line:
-                    report["posts"]["created"] += 1
-                if 'scheduled for' in line and 'Post ' in line:
-                    report["posts"]["scheduled"] += 1
-                if 'cancelled by user' in line:
-                    report["posts"]["cancelled"] += 1
-                if 'posts' in line and 'retry' in line:
-                    report["posts"]["retried"] += 1
-                if 'send_post_task failed' in line or 'Failed to send post' in line:
-                    report["posts"]["failed"] += 1
-                if 'sent successfully to' in line and 'Post ' in line:
-                    report["posts"]["sent"] += 1
-                if 'created chat session' in line and 'User' in line:
-                    report["chat"]["sessions_created"] += 1
-                if 'sending message to AI' in line and 'User' in line:
-                    report["chat"]["messages_sent"] += 1
-                if 'Connection error to AI service' in line or 'AI service timeout' in line:
-                    report["chat"]["ai_errors"] += 1
-                if '[ERROR]' in line and 'django' not in line and 'core.task' not in line:
-                    report["system"]["error_count"] += 1
-                if '[WARNING]' in line and 'django' not in line and 'core.task' not in line:
-                    report["system"]["warning_count"] += 1
+                        if 'registered successfully' in line and 'User' in line:
+                            report["users"]["registrations"] += 1
+                            ip = extract_value(line, 'IP=')
+                            report["users"]["top_ips"][ip] = report["users"]["top_ips"].get(ip, 0) + 1
+                        if 'logged in successfully' in line and 'User' in line:
+                            report["users"]["login_count"] += 1
+                            ip = extract_value(line, 'IP=')
+                            report["users"]["top_ips"][ip] = report["users"]["top_ips"].get(ip, 0) + 1
+                        if 'Failed login attempt' in line and 'IP=' in line:
+                            report["users"]["failed_logins"] += 1
+                            ip = extract_value(line, 'IP=')
+                            report["users"]["top_ips"][ip] = report["users"]["top_ips"].get(ip, 0) + 1
+                        if 'scheduled for' in line and 'Post ' in line:
+                            report["posts"]["scheduled"] += 1
+                        if 'cancelled by user' in line:
+                            report["posts"]["cancelled"] += 1
+                        if 'posts' in line and 'retry' in line:
+                            report["posts"]["retried"] += 1
+                        if 'send_post_task failed' in line or 'Failed to send post' in line:
+                            report["posts"]["failed"] += 1
+                        if 'sent successfully to' in line and 'Post ' in line:
+                            report["posts"]["sent"] += 1
+                        if 'created chat session' in line and 'User' in line:
+                            report["chat"]["sessions_created"] += 1
+                        if 'sending message to AI' in line and 'User' in line:
+                            report["chat"]["messages_sent"] += 1
+                        if 'Connection error to AI service' in line or 'AI service timeout' in line:
+                            report["chat"]["ai_errors"] += 1
+                        if '[ERROR]' in line and 'django' not in line and 'core.task' not in line:
+                            report["system"]["error_count"] += 1
+                        if '[WARNING]' in line and 'django' not in line and 'core.task' not in line:
+                            report["system"]["warning_count"] += 1
 
-    except Exception as e:
-        task_logger.error(f"Error reading log file: {e}")
-        return f"Failed to read log: {e}"
+            except Exception as e:
+                task_logger.error(f"Error reading {log_file}: {e}")
+
+    top_ips = sorted(report["users"]["top_ips"].items(), key=lambda x: -x[1])[:5]
+    top_ips_html = ''.join(
+        f'<li><strong>{ip}:</strong> {cnt} بار</li>'
+        for ip, cnt in top_ips
+    )
 
     message = f"""
 <html>
@@ -122,7 +133,7 @@ def daily_log_report():
         <ul>
             <li><strong>ورود موفق:</strong> {report["users"]["login_count"]}</li>
             <li><strong>ثبت‌نام:</strong> {report["users"]["registrations"]}</li>
-            <li class="error" ><strong>تلاش ناموفق ورود:</strong> {report["users"]["failed_logins"]}</li>
+            <li class="error"><strong>تلاش ناموفق ورود:</strong> {report["users"]["failed_logins"]}</li>
         </ul>
 
         <h2>پست‌ها</h2>
@@ -143,7 +154,7 @@ def daily_log_report():
 
         <h2>IPهای پرتردد</h2>
         <ul>
-            {chr(10).join(f'<li><strong>{ip}:</strong> {cnt} بار</li>' for ip, cnt in sorted(report["users"]["top_ips"].items(), key=lambda x: -x[1])[:5])}
+            {top_ips_html}
         </ul>
 
         <h2>سلامت سیستم</h2>
@@ -160,44 +171,152 @@ def daily_log_report():
 </html>
 """
 
+    zip_buffer_path = LOGS_DIR / f"logs_backup_{today_str}.zip"
+
     try:
-        send_mail(
-            subject=f"گزارش روزانه سرویس شبکه اجتماعی - {today_str}",
-            message="لطفاً از مرورگر خود برای مشاهده گزارش استفاده کنید.",
+        with zipfile.ZipFile(zip_buffer_path, 'w', zipfile.ZIP_DEFLATED) as log_zip:
+            found_logs = False
+            for log_file in LOGS_DIR.iterdir():
+                if log_file.is_file() and (log_file.suffix in ['.log', '.txt'] or 'log' in log_file.name):
+                    log_zip.write(log_file, arcname=log_file.name)
+                    task_logger.info(f"Added to zip: {log_file.name}")
+                    found_logs = True
+            if not found_logs:
+                task_logger.warning("No log files found to include in backup.")
+                zip_buffer_path.unlink(missing_ok=True)
+                return "No logs to backup."
+    except Exception as e:
+        task_logger.error(f"❌ Failed to create log zip: {e}")
+        return f"Zip creation failed: {e}"
+
+    recipients = settings.LOGGING_EMAIL_RECIPIENTS
+    if isinstance(recipients, str):
+        recipients = [recipients]
+    elif not isinstance(recipients, (list, tuple)):
+        recipients = []
+
+    if not recipients:
+        task_logger.warning("No recipients configured for log report.")
+        return "No recipients."
+
+    try:
+        from django.core.mail import EmailMessage
+
+        email = EmailMessage(
+            subject=f"گزارش روزانه و بک‌آپ لاگ‌ها - {today_str}",
+            body=message,
             from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[settings.LOGGING_EMAIL_RECIPIENTS],
-            fail_silently=False,
-            html_message=message
+            to=recipients,
         )
-        task_logger.info("Daily report email sent successfully.")
+        email.content_subtype = "html"
+
+        if zip_buffer_path.exists():
+            email.attach_file(str(zip_buffer_path))
+            task_logger.info(f"Log backup attached: {zip_buffer_path}")
+        else:
+            task_logger.error("Zip file not found for attachment!")
+            return "Zip file missing."
+
+        email.send()
+        task_logger.info("Daily report and log backup sent successfully.")
+
+        MAIN_LOG_FILES = ['all.log', 'errors.log', 'alerts.log']
+        for log_filename in MAIN_LOG_FILES:
+            log_path = LOGS_DIR / log_filename
+            if log_path.exists():
+                try:
+                    with open(log_path, 'w'):
+                        pass
+                    task_logger.info(f"Cleared log content: {log_filename}")
+                except Exception as e:
+                    task_logger.error(f"Failed to clear {log_filename}: {e}")
+            else:
+                task_logger.warning(f"Log file not found: {log_filename}")
+
+        try:
+            if zip_buffer_path.exists():
+                zip_buffer_path.unlink()
+                task_logger.info("Temporary zip file deleted.")
+        except Exception as e:
+            task_logger.warning(f"Could not delete zip file: {e}")
+
     except Exception as e:
         task_logger.error(f"Failed to send email: {e}")
+        return f"Email sending failed: {e}"
 
-    return f"Daily report completed for {today_str}."
+    return f"Daily log report completed and logs cleared for {today_str}."
 
 def extract_value(line, key):
     try:
-        return line.split(key)[1].split(' ')[0]
-    except:
+        if key not in line:
+            return 'Unknown'
+        value = line.split(key, 1)[1].strip()
+        return value.split()[0] if value.split() else 'Unknown'
+    except Exception:
         return 'Unknown'
 
 @shared_task
 def health_check():
-    import psutil
-    from django.db import connection
+    logger = logging.getLogger('core.system')
+    alert_logger = logging.getLogger('core.alert')
 
     memory = psutil.virtual_memory().percent
     cpu = psutil.cpu_percent(interval=1)
+    disk = psutil.disk_usage('/')
+    disk_percent = (disk.used / disk.total) * 100
 
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT 1")
-        db_ok = bool(cursor.fetchone())
+    db_ok = False
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            db_ok = True
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
 
-    logger = logging.getLogger('core.system')
-    status = f"CPU={cpu}%, Mem={memory}%, DB={'OK' if db_ok else 'ERROR'}"
+    status = f"CPU={cpu:.1f}%, Mem={memory:.1f}%, Disk={disk_percent:.1f}%, DB={'OK' if db_ok else 'ERROR'}"
     logger.info(f"Health Check: {status}")
 
+    alerts = []
     if memory > 85:
-        logger.warning(f"High memory usage: {memory}%")
+        alerts.append(f"حافظه : {memory:.1f}%")
     if cpu > 90:
-        logger.warning(f"High CPU usage: {cpu}%")
+        alerts.append(f"پردازنده : {cpu:.1f}%")
+    if disk_percent > 90:
+        alerts.append(f"فضای دیسک : {disk_percent:.1f}%")
+    if not db_ok:
+        alerts.append("دیتابیس قطع است!")
+
+    if alerts:
+        send_critical_alert_email(
+            subject="هشدار سلامت سیستم",
+            body="مشکلات زیر شناسایی شد:\n\n" + "\n".join(alerts),
+            logger=alert_logger
+        )
+
+    return status
+
+def send_critical_alert_email(subject, body, logger):
+    from django.conf import settings
+    from django.core.mail import EmailMessage
+
+    recipients = settings.LOGGING_EMAIL_RECIPIENTS
+    if isinstance(recipients, str):
+        recipients = [recipients]
+    elif not isinstance(recipients, (list, tuple)):
+        logger.error("No valid recipients for critical alert.")
+        return
+
+    if not recipients:
+        return
+
+    try:
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.EMAIL_HOST_USER,
+            to=recipients,
+        )
+        email.send()
+        logger.critical(f"Critical alert email sent: {subject}")
+    except Exception as e:
+        logger.error(f"Failed to send critical alert email: {e}")

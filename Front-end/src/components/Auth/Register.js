@@ -161,7 +161,7 @@ const Register = () => {
       setMessage(response.data.msg || 'ثبت‌نام موفق');
       setShowSpinner(true);
       setTimeout(() => {
-        navigate('/verify-email');
+        navigate('/login');
       }, 2000);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -199,7 +199,7 @@ const Register = () => {
 
   return (
     <div className="register-page">
-      {showSpinner && <Spinner message="در حال انتقال به صفحه وریفای..." />}
+      {showSpinner && <Spinner message="در حال انتقال..." />}
 
       <div className="register-container">
         {/* بخش ویژگی‌ها */}

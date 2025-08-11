@@ -1,6 +1,5 @@
 from rest_framework.views import APIView
 from rest_framework import status
-from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from drf_yasg.utils import swagger_auto_schema
@@ -9,7 +8,8 @@ from .serializers import RegisterSerializer
 from utils.responses import success_response, error_response
 from decouple import config
 from django.conf import settings
-
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import check_password
 class RegisterView(APIView):
     @swagger_auto_schema(
         request_body=RegisterSerializer,
@@ -24,7 +24,7 @@ class RegisterView(APIView):
 """
     )
     def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
+        serializer = RegisterSerializer(data=request.data,context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return success_response(
@@ -60,14 +60,24 @@ class LoginView(APIView):
         if not email or not password:
             return error_response(message="لطفاً ایمیل و رمز را وارد کنید.", status_code=status.HTTP_400_BAD_REQUEST)
 
-        user = authenticate(request, email=email, password=password)
-
-        if not user:
+        User = get_user_model()
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
             return error_response(message="ایمیل یا رمز اشتباه است.", status_code=status.HTTP_401_UNAUTHORIZED)
+        if not check_password(password, user.password):
+            return error_response(message="ایمیل یا رمز اشتباه است.", status_code=status.HTTP_401_UNAUTHORIZED)
+
+        if not user.is_active:
+            return error_response(
+                message="حساب شما هنوز توسط ادمین تأیید نشده است. پس از تأیید، ایمیلی از ما دریافت خواهید کرد.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                data={'approval_required': True, 'email': user.email}
+            )
 
         if not user.is_verified:
             return error_response(
-                message="ایمیل شما هنوز وریفای نشده است.", 
+                message="ایمیل شما هنوز وریفای نشده است.",
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 data={'verification_required': True, 'email': email}
             )

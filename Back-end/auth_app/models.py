@@ -3,6 +3,7 @@ from django.utils import timezone
 from decouple import config
 from django.core.validators import RegexValidator
 import secrets
+from core.validator import otp_validator, email_validator
 
 
 class OTPPurpose(models.TextChoices):
@@ -12,7 +13,7 @@ class OTPPurpose(models.TextChoices):
 
 
 class EmailOTP(models.Model):
-    email = models.EmailField(db_index=True)
+    email = models.EmailField(db_index=True,validators=[email_validator])
     otp = models.CharField(
         max_length=6,
         validators=[RegexValidator(r'^\d{6}$')]

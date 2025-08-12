@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
-
+from core.validator import email_validator, name_validator, phone_validator
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -19,10 +19,10 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class User(AbstractBaseUser, PermissionsMixin):
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
-    email = models.EmailField(unique=True)
+    first_name = models.CharField(max_length=100, validators=[name_validator])
+    last_name = models.CharField(max_length=100, validators=[name_validator])
+    phone = models.CharField(max_length=15, validators=[phone_validator])
+    email = models.EmailField(unique=True, validators=[email_validator])
     is_active = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)

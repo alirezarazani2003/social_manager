@@ -14,13 +14,7 @@ from .permissions import IsEmailVerified
 from django.contrib.auth import update_session_auth_hash
 from django.conf import settings
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
-from django.http import JsonResponse
-from django.utils.decorators import method_decorator
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from config.throttles import RequestOTPThrottle
-from rest_framework.decorators import api_view
-from rest_framework.permissions import IsAuthenticated
 import logging
 from core.logging_filters import set_user_id, set_request_id, set_client_ip
 import uuid

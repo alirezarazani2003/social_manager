@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import User
+import re
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.contrib.sites.shortcuts import get_current_site
@@ -19,10 +20,34 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        if data['password'] != data['password2']:
+        password = data['password']
+        password2 = data['password2']
+
+        if password != password2:
             raise serializers.ValidationError("رمزها یکسان نیستند.")
-        if len(data['password']) < 8:
+
+        if len(password) < 8:
             raise serializers.ValidationError("طول رمز باید حداقل ۸ کاراکتر باشد.")
+
+        if password.isalpha():
+            raise serializers.ValidationError("رمز عبور باید شامل عدد نیز باشد.")
+        if password.isnumeric():
+            raise serializers.ValidationError("رمز عبور باید شامل حروف نیز باشد.")
+        if password.islower():
+            raise serializers.ValidationError("رمز عبور باید شامل حروف بزرگ نیز باشد.")
+        if password.isupper():
+            raise serializers.ValidationError("رمز عبور باید شامل حروف کوچک نیز باشد.")
+        if password.isalnum():
+            raise serializers.ValidationError("رمز عبور باید شامل نمادهایی مانند !@#$ نیز باشد.")
+        if not re.search(r'[A-Z]', password):
+            raise serializers.ValidationError("رمز عبور باید حداقل یک حرف بزرگ داشته باشد.")
+        if not re.search(r'[a-z]', password):
+            raise serializers.ValidationError("رمز عبور باید حداقل یک حرف کوچک داشته باشد.")
+        if not re.search(r'[0-9]', password):
+            raise serializers.ValidationError("رمز عبور باید حداقل یک عدد داشته باشد.")
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            raise serializers.ValidationError("رمز عبور باید حداقل یک نماد (!@#$...) داشته باشد.")
+
         return data
 
     def create(self, validated_data):

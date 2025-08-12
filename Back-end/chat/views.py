@@ -25,9 +25,6 @@ def get_client_ip(request):
     return ip
 
 class ChatSessionListCreateView(APIView):
-    """
-    List all chat sessions or create a new chat session
-    """
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
@@ -91,9 +88,6 @@ class ChatSessionListCreateView(APIView):
 
 
 class ChatSessionDetailView(APIView):
-    """
-    Retrieve or delete a specific chat session
-    """
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
@@ -172,9 +166,6 @@ class ChatSessionDetailView(APIView):
 
 
 class SessionMessagesView(APIView):
-    """
-    Get all messages for a specific chat session
-    """
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
@@ -250,9 +241,6 @@ chat_response_schema = openapi.Schema(
 )
 
 class ChatMessageView(APIView):
-    """
-    Send a message to AI and get response
-    """
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(

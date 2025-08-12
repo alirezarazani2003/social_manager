@@ -105,7 +105,16 @@ const Login = () => {
     } catch (error) {
       setLoading(false);
       const status = error.response?.status;
-
+      if (status === 429) {
+      setMessage('تعداد درخواست‌ها بیش از حد مجاز است. لطفاً کمی صبر کنید.');
+      navigate('/warning', {
+        state: {
+          message: 'تعداد درخواست‌های شما بیش از حد مجاز است. لطفاً صبر کنید.',
+          email: formData.email
+        }
+      });
+      return;
+    }
       if (status === 401) {
         const errorMsg = error.response?.data?.message || 'ورود ناموفق بود.';
         if (errorMsg.includes('وریفای') || errorMsg.includes('verify')) {

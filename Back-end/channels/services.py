@@ -51,7 +51,7 @@ def verify_bale_channel(username: str):
             chat_info = result.get("chat", {})
 
             return True, {
-                "chat_id": chat_info.get("id", username),  # در بله معمولاً id داده نمی‌شود، پس fallback به username
+                "chat_id": chat_info.get("id", username),
                 "username": chat_info.get("username", username),
             }
         else:
@@ -79,7 +79,7 @@ def verify_channel(platform: str, username: str):
 
 
 def send_message_to_channel(channel, text: str = "", files: list = None):
-    platform = channel.platform  # مثلاً 'telegram' یا 'bale'
+    platform = channel.platform
     if platform == "telegram":
         return send_message_telegram(channel, text, files)
     elif platform == "bale":
@@ -237,22 +237,6 @@ def send_message_bale(channel , text:str="" , files:list=None):
             }
 
             response = requests.post(url, data=data, files=files_payload)
-            # media_group: list[InputMedia] = []
-            # for i, f_info in enumerate(files):
-            #     path = f_info["path"]
-            #     caption = f_info.get("caption", "") if i == 0 else None
-
-            #     if path.lower().endswith(('.jpg', '.jpeg', '.png')):
-            #         media_group.append(InputMediaPhoto(media=open(path, 'rb'), caption=caption))
-            #     elif path.lower().endswith(('.mp4', '.mov', '.mkv')):
-            #         media_group.append(InputMediaVideo(media=open(path, 'rb'), caption=caption))
-            #     else:
-            #         continue
-
-            # if not media_group:
-            #     return False, "هیچ فایل تصویری یا ویدیویی قابل ارسال نبود."
-
-            # response=requests.post(url=f"https://tapi.bale.ai/bot{token}/sendMediaGroup", data={"chat_id": chat_id, "media": media_group})
 
         if response.status_code == 200:
             resp_json = response.json()

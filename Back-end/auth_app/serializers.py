@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from core.validator import  otp_validator
+
 User = get_user_model()
 
 class RequestOTPSerializer(serializers.Serializer):
@@ -8,8 +10,7 @@ class RequestOTPSerializer(serializers.Serializer):
 
 class VerifyOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    otp = serializers.CharField()
-    purpose = serializers.ChoiceField(choices=["verify", "login", "reset"])
+    otp = serializers.CharField(validators=[otp_validator])
 
 
 

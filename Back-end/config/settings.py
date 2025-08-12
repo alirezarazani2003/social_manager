@@ -13,27 +13,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
-import os
+from celery.schedules import crontab
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
-}
 
 
 # Quick-start development settings - unsuitable for production
@@ -67,6 +49,8 @@ INSTALLED_APPS = [
     'channels',
     'posts',
     'chat',
+    'django_celery_beat',
+
 ]
 
 MIDDLEWARE = [
@@ -78,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.CriticalErrorAlertMiddleware'
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -160,12 +145,24 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'config.throttles.RoleBasedRateThrottle',
+        'config.throttles.RequestOTPThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/minute',
+        'user': '100/minute',
+        'admin': '1000/minute',
+        'otp_request': '1/minute',
+    },
+
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'auth_app.authentication.CookieJWTAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10
 }
+
 
 
 SIMPLE_JWT = {
@@ -188,6 +185,7 @@ EMAIL_PORT = int(config("EMAIL_PORT"))
 EMAIL_USE_TLS = config("EMAIL_USE_TLS",cast=bool)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+LOGGING_EMAIL_RECIPIENTS = config("LOGGING_EMAIL_RECIPIENTS")
 
 
 CORS_ALLOW_CREDENTIALS = config('CORS_ALLOW_CREDENTIALS', default=False, cast=bool)
@@ -203,7 +201,6 @@ SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool
 CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
 SECURE_BROWSER_XSS_FILTER = config('SECURE_BROWSER_XSS_FILTER', default=True, cast=bool)
 SECURE_CONTENT_TYPE_NOSNIFF = config('SECURE_CONTENT_TYPE_NOSNIFF', default=True, cast=bool)
-JWT_COOKIE_SECURE = config('JWT_COOKIE_SECURE', default=False, cast=bool)
 # اگر از HTTPS استفاده می‌کنی:
 # SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
 
@@ -217,6 +214,22 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND")  
 
+DAILY_REPORT_HOUR = config('CELERY_TASK_DAILY_REPORT_HOUR',cast=int)
+DAILY_REPORT_MINUTE = config('CELERY_TASK_DAILY_REPORT_MINUTE',cast=int)
+HEALTH_CHECK_INTERVAL = config('CELERY_TASK_HEALTH_CHECK_INTERVAL',cast=float)
+
+CELERY_BEAT_SCHEDULE = {
+    'daily-log-report': {
+        'task': 'core.tasks.daily_log_report',
+        'schedule': crontab(hour=DAILY_REPORT_HOUR, minute=DAILY_REPORT_MINUTE),
+    },
+    'health-check': {
+    'task': 'core.tasks.health_check',
+    'schedule': HEALTH_CHECK_INTERVAL,
+    },
+}
+CELERY_TIMEZONE = 'Asia/Tehran'
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -224,3 +237,119 @@ MEDIA_ROOT = BASE_DIR / "media"
 AI_SERVICE_URL = config('AI_SERVICE_URL')
 
 USER_SPACE_STORAGE = int(config('USER_SPACE_STORAGE'))
+
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+    'context': {
+        '()': 'core.logging_filters.ContextFilter',
+        },
+    'hide_telegram_requests': {
+        '()': 'core.logging_filters.TelegramRequestFilter',
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] [{levelname}] {name}::{module}.{funcName}::{message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '[{asctime}] [{levelname}] {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file_all': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'all.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 7,
+            'formatter': 'verbose',
+            'filters': ['context','hide_telegram_requests'],
+        },
+        'file_error': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'errors.log',
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 7,
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'filters': ['hide_telegram_requests'],
+            
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file_all', 'file_error', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'core': {
+            'handlers': ['file_all', 'file_error','console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'core.task': {
+        'handlers': ['file_all', 'file_error', 'console'],
+        'level': 'INFO',
+        'propagate': False,
+        },
+        'auth_app': {
+            'handlers': ['file_all', 'file_error','console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'posts': {
+            'handlers': ['file_all', 'file_error','console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'users': {
+            'handlers': ['file_all', 'file_error','console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'chat': {
+            'handlers': ['file_all', 'file_error','console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['file_all','console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery.task': {
+            'handlers': ['file_all','console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'urllib3': {
+            'handlers': ['file_all', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+            'filters': ['hide_telegram_requests'],
+        },
+        'urllib3.connectionpool': {
+            'handlers': ['file_all', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+            'filters': ['hide_telegram_requests'],
+        },
+        'requests': {
+            'handlers': ['file_all', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+            'filters': ['hide_telegram_requests'],
+        },
+    },
+}

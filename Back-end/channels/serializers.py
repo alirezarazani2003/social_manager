@@ -16,7 +16,6 @@ class ChannelSerializer(serializers.ModelSerializer):
         qs = Channel.objects.filter(user=user, username=value)
         
         if self.instance:
-            # qs = Channel.objects.filter(user=user, username=value).exclude(id=self.instance.id)
             qs = qs.exclude(id=self.instance.id)
         else:
             qs = Channel.objects.filter(user=user, username=value)

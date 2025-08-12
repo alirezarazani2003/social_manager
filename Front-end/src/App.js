@@ -12,6 +12,7 @@ import './App.css';
 import './fonts.css'
 import Profile from './components/Dashboard/Profile';
 import NotFound from './components/Common/NotFound';
+import ThrottleWarning from './components/Common/ThrottleWarning';
 function App() {
   return (
     <Router>
@@ -27,6 +28,7 @@ function App() {
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/dashboard/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
+          <Route path="/warning" element={<ThrottleWarning />} />
         </Routes>
       </div>
     </Router>

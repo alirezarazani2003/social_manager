@@ -3,3 +3,6 @@ test.py
 */migrations
 */__pycache__
 media
+*celerybeat*
+logs
+__pycache__

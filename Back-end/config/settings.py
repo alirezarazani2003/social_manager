@@ -40,7 +40,7 @@ LOGGING = {
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0cu#)yn=jho2txxglr_d9(klwu#g!nv0u$*)#m8o!&srz+qz6k'
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool)
@@ -189,44 +189,53 @@ SIMPLE_JWT = {
 
 }
 
-JWT_COOKIE_NAME = 'access'
-JWT_COOKIE_REFRESH_NAME = 'refresh'
-JWT_COOKIE_SECURE = True
-JWT_COOKIE_HTTPONLY = True
+JWT_COOKIE_NAME = config("JWT_COOKIE_NAME")
+JWT_COOKIE_REFRESH_NAME = config("JWT_COOKIE_REFRESH_NAME")
+JWT_COOKIE_SECURE = config("JWT_COOKIE_SECURE", cast=bool)
+JWT_COOKIE_HTTPONLY = config("JWT_COOKIE_HTTPONLY", cast=bool)
 MAX_ACTIVE_TOKENS = config('MAX_ACTIVE_TOKENS', cast=int)
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = config("EMAIL_BACKEND")
 EMAIL_HOST = config("EMAIL_HOST")
 EMAIL_PORT = int(config("EMAIL_PORT"))
-EMAIL_USE_TLS = True
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
 
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://192.168.1.102:3000"]
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = config(
+    'CORS_ALLOW_CREDENTIALS', default=False, cast=bool)
+CORS_ALLOWED_ORIGINS = config(
+    'CORS_ALLOWED_ORIGINS',
+    default='',
+    cast=lambda v: [s.strip() for s in v.split(',') if s.strip()]
+)
+CORS_ALLOW_ALL_ORIGINS = config(
+    'CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
 
 
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-JWT_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = config(
+    'SESSION_COOKIE_SECURE', default=False, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+SECURE_BROWSER_XSS_FILTER = config(
+    'SECURE_BROWSER_XSS_FILTER', default=True, cast=bool)
+SECURE_CONTENT_TYPE_NOSNIFF = config(
+    'SECURE_CONTENT_TYPE_NOSNIFF', default=True, cast=bool)
+JWT_COOKIE_SECURE = config('JWT_COOKIE_SECURE', default=False, cast=bool)
 # اگر از HTTPS استفاده می‌کنی:
-# SECURE_SSL_REDIRECT = True
+# SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
 
 
 TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN")
+BALE_BOT_TOKEN = config("BALE_BOT_TOKEN")
 
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = config("CELERY_BROKER_URL")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND")
+
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

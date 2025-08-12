@@ -185,7 +185,7 @@ const MediaUploader = ({ onFilesChange, currentFiles = [] }) => {
         type="file"
         multiple
         onChange={handleFileChange}
-        accept="image/*,video/*,audio/*"
+        accept="*/*"
         className="file-input"
         disabled={isSpaceFull || isUploading}
         style={{

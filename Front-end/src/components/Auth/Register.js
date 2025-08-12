@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
-import Spinner from '../Common/Spinner'; // import کردن اسپینر
+import Spinner from '../Common/Spinner';
 import './Register.css';
 
 const Register = () => {
@@ -13,11 +13,56 @@ const Register = () => {
     password: '',
     password2: ''
   });
-  const [errors, setErrors] = useState({}); // برای نمایش خطاهای هر فیلد
-  const [message, setMessage] = useState(''); // برای نمایش پیام کلی
+  const [errors, setErrors] = useState({});
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showSpinner, setShowSpinner] = useState(false); // state برای نمایش اسپینر
+  const [showSpinner, setShowSpinner] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword2, setShowPassword2] = useState(false);
   const navigate = useNavigate();
+
+  // تشخیص کاراکتر فارسی/عربی
+  const isPersianChar = (char) => {
+    const code = char.charCodeAt(0);
+    return (code >= 1570 && code <= 1740) || code === 8204 || code === 8205;
+  };
+
+  // تابع ارزیابی قدرت رمز عبور
+  const getPasswordStrength = (password) => {
+    if (password === '') return { label: '', width: 0, color: '' };
+
+    const checks = {
+      length: password.length >= 8,
+      lower: /[a-z]/.test(password),
+      upper: /[A-Z]/.test(password),
+      number: /\d/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    };
+
+    const passedChecks = Object.values(checks).filter(Boolean).length;
+
+    let strength = 0;
+    let label = '';
+    let color = '';
+
+    if (passedChecks === 5 && password.length >= 8) {
+      strength = 100;
+      label = 'بسیار قوی';
+      color = '#28a745'; // سبز
+    } else if (passedChecks >= 3) {
+      strength = 60;
+      label = 'متوسط';
+      color = '#ffc107'; // زرد
+    } else {
+      strength = 20;
+      label = 'ضعیف';
+      color = '#dc3545'; // قرمز
+    }
+
+    return { label, width: strength, color };
+  };
+
+  const strength = getPasswordStrength(formData.password);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,11 +70,42 @@ const Register = () => {
       ...prev,
       [name]: value
     }));
-    // پاک کردن خطای فیلد وقتی کاربر شروع به تایپ کرد
+
+    // پاک کردن خطا وقتی کاربر تایپ می‌کنه
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
+      }));
+    }
+  };
+
+  const handlePasswordKeyDown = (e) => {
+    if (isPersianChar(e.key)) {
+      e.preventDefault();
+      setErrors(prev => ({
+        ...prev,
+        password: 'لطفاً کیبورد خود را به حالت انگلیسی تغییر دهید'
+      }));
+    } else if (errors.password) {
+      setErrors(prev => ({
+        ...prev,
+        password: ''
+      }));
+    }
+  };
+
+  const handlePassword2KeyDown = (e) => {
+    if (isPersianChar(e.key)) {
+      e.preventDefault();
+      setErrors(prev => ({
+        ...prev,
+        password2: 'لطفاً کیبورد خود را به حالت انگلیسی تغییر دهید'
+      }));
+    } else if (errors.password2) {
+      setErrors(prev => ({
+        ...prev,
+        password2: ''
       }));
     }
   };
@@ -39,9 +115,10 @@ const Register = () => {
     setLoading(true);
     setMessage('');
     setErrors({});
-    
-    // اعتبارسنجی سمت فرانت‌اند
+
+    // ولیدیشن فرانت‌اند
     let formErrors = {};
+
     if (!formData.first_name) {
       formErrors.first_name = 'نام الزامی است';
     }
@@ -50,8 +127,8 @@ const Register = () => {
     }
     if (!formData.phone) {
       formErrors.phone = 'شماره تلفن الزامی است';
-    } else if (!/^\d{11}$/.test(formData.phone)) {
-      formErrors.phone = 'شماره تلفن باید 11 رقمی باشد';
+    } else if (!/^09\d{9}$/.test(formData.phone)) {
+      formErrors.phone = 'شماره تلفن نامعتبر است. لطفاً یک شماره معتبر وارد کنید (مثلاً: 09123456789)';
     }
     if (!formData.email) {
       formErrors.email = 'ایمیل الزامی است';
@@ -62,39 +139,36 @@ const Register = () => {
       formErrors.password = 'رمز عبور الزامی است';
     } else if (formData.password.length < 8) {
       formErrors.password = 'رمز عبور باید حداقل 8 کاراکتر باشد';
+    } else if (/[آ-ی]/.test(formData.password)) {
+      formErrors.password = 'رمز عبور نباید شامل کاراکتر فارسی باشد';
     }
     if (formData.password !== formData.password2) {
       formErrors.password2 = 'رمزهای عبور یکسان نیستند';
+    } else if (/[آ-ی]/.test(formData.password2)) {
+      formErrors.password2 = 'رمز عبور نباید شامل کاراکتر فارسی باشد';
     }
-    
+
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       setLoading(false);
       return;
     }
-    
+
     try {
-      const response = await api.post('/users/register/', 
-        formData,
-        { withCredentials: true }
-      );
+      const response = await api.post('/users/register/', formData, {
+        withCredentials: true
+      });
       setMessage(response.data.msg || 'ثبت‌نام موفق');
-      
-      // نمایش اسپینر و رفتن به صفحه وریفای ایمیل
       setShowSpinner(true);
       setTimeout(() => {
         navigate('/verify-email');
       }, 2000);
-      
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Register error:', error);
       }
-      
-      // نمایش خطاهای سمت سرور
       if (error.response?.data) {
         const serverErrors = error.response.data;
-        // اگر خطاهای فیلدها باشن
         if (serverErrors.first_name || serverErrors.last_name || 
             serverErrors.phone || serverErrors.email || 
             serverErrors.password || serverErrors.password2) {
@@ -107,7 +181,6 @@ const Register = () => {
             password2: serverErrors.password2 || ''
           });
         } else {
-          // اگه خطای کلی باشه
           const errorMsg = serverErrors.msg || 
                           serverErrors.detail || 
                           serverErrors.reason ||
@@ -126,13 +199,12 @@ const Register = () => {
 
   return (
     <div className="register-page">
-      {/* نمایش اسپینر */}
       {showSpinner && <Spinner message="در حال انتقال به صفحه وریفای..." />}
-      
+
       <div className="register-container">
         {/* بخش ویژگی‌ها */}
         <div className="register-features">
-          <h2 className="register-title">ثبت‌نام در سرویس مدیریت شبکه های اجتماعی </h2>
+          <h2 className="register-title">ثبت‌نام در سرویس مدیریت شبکه های اجتماعی</h2>
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-icon">📱</div>
@@ -156,18 +228,18 @@ const Register = () => {
             </div>
           </div>
         </div>
-        
+
         {/* بخش فرم */}
         <div className="register-form-section">
           <div className="register-form-wrapper">
             <h3 className="form-title">ثبت‌نام کاربر جدید</h3>
-            
+
             {message && (
               <div className={`message ${message.includes('خطا') ? 'error' : 'success'}`}>
                 {message}
               </div>
             )}
-            
+
             <form onSubmit={handleSubmit} className="register-form">
               <div className="form-row">
                 <div className="form-group">
@@ -205,7 +277,7 @@ const Register = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="phone">شماره تلفن:</label>
                 <input
@@ -214,7 +286,7 @@ const Register = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="شماره تلفن خود را وارد کنید"
+                  placeholder="09123456789"
                   required
                   disabled={loading}
                   className={errors.phone ? 'error-input' : ''}
@@ -223,7 +295,7 @@ const Register = () => {
                   <div className="field-error">{errors.phone}</div>
                 )}
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="email">ایمیل:</label>
                 <input
@@ -233,6 +305,7 @@ const Register = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="ایمیل خود را وارد کنید"
+                  dir="ltr"
                   required
                   disabled={loading}
                   className={errors.email ? 'error-input' : ''}
@@ -241,44 +314,100 @@ const Register = () => {
                   <div className="field-error">{errors.email}</div>
                 )}
               </div>
-              
-              <div className="form-group">
+
+              {/* فیلد رمز عبور با دکمه چشم و نوار قدرت */}
+              <div className="form-group password-group">
                 <label htmlFor="password">رمز عبور:</label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="رمز عبور خود را وارد کنید"
-                  required
-                  disabled={loading}
-                  className={errors.password ? 'error-input' : ''}
-                />
-                {errors.password && (
+                <div className="password-input-container">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    onKeyDown={handlePasswordKeyDown}
+                    placeholder="رمز عبور خود را وارد کنید"
+                    required
+                    disabled={loading}
+                    className={errors.password ? 'error-input' : ''}
+                    dir="ltr"
+                    inputMode="text"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    aria-label={showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'}
+                  >
+                    {showPassword ? '👁️‍🗨️' : '🙈'}
+                  </button>
+                </div>
+
+                {/* نوار قدرت رمز عبور */}
+                {formData.password && (
+                  <div className="password-strength-container">
+                    <div
+                      className="password-strength-bar"
+                      style={{
+                        width: `${strength.width}%`,
+                        backgroundColor: strength.color,
+                      }}
+                    ></div>
+                    <div className="password-strength-label" style={{ color: strength.color }}>
+                      {strength.label}
+                    </div>
+                  </div>
+                )}
+
+                {/* پیام راهنما */}
+                {formData.password && strength.label === 'ضعیف' && (
+                  <div className="password-hint error">
+                    رمز عبور خیلی ضعیف است. از ترکیب حروف بزرگ، کوچک، عدد و کاراکتر خاص استفاده کنید.
+                  </div>
+                )}
+                {formData.password && strength.label === 'متوسط' && (
+                  <div className="password-hint">
+                    رمز عبور متوسط است. رمز باید حاوی کاراکتر های بزرگ و کوچک،اعدادوکاراکتر های خاص مانند @$% باشد.
+                  </div>
+                )}
+                {errors.password && !strength.label && (
                   <div className="field-error">{errors.password}</div>
                 )}
               </div>
-              
-              <div className="form-group">
+
+              {/* فیلد تکرار رمز عبور با دکمه چشم */}
+              <div className="form-group password-group">
                 <label htmlFor="password2">تکرار رمز عبور:</label>
-                <input
-                  type="password"
-                  id="password2"
-                  name="password2"
-                  value={formData.password2}
-                  onChange={handleChange}
-                  placeholder="تکرار رمز عبور خود را وارد کنید"
-                  required
-                  disabled={loading}
-                  className={errors.password2 ? 'error-input' : ''}
-                />
+                <div className="password-input-container">
+                  <input
+                    type={showPassword2 ? 'text' : 'password'}
+                    id="password2"
+                    name="password2"
+                    value={formData.password2}
+                    onChange={handleChange}
+                    onKeyDown={handlePassword2KeyDown}
+                    placeholder="تکرار رمز عبور خود را وارد کنید"
+                    required
+                    disabled={loading}
+                    className={errors.password2 ? 'error-input' : ''}
+                    dir="ltr"
+                    inputMode="text"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => setShowPassword2(prev => !prev)}
+                    aria-label={showPassword2 ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'}
+                  >
+                    {showPassword2 ? '👁️‍🗨️' : '🙈'}
+                  </button>
+                </div>
                 {errors.password2 && (
                   <div className="field-error">{errors.password2}</div>
                 )}
               </div>
-              
-              <button 
+
+              <button
                 type="submit"
                 disabled={loading}
                 className="register-btn"
@@ -286,7 +415,7 @@ const Register = () => {
                 {loading ? 'در حال ثبت‌نام...' : 'ثبت‌نام'}
               </button>
             </form>
-            
+
             <div className="auth-links">
               <p>
                 قبلاً حساب کاربری دارید؟{' '}

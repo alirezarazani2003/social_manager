@@ -133,6 +133,7 @@ const LoginOTP = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="ایمیل خود را وارد کنید"
+                    dir="ltr"
                     required
                     disabled={loading}
                   />
@@ -151,6 +152,7 @@ const LoginOTP = () => {
                   <label htmlFor="otp">کد 6 رقمی:</label>
                   <input
                     type="text"
+                    dir="ltr"
                     id="otp"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}

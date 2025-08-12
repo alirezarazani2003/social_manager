@@ -550,6 +550,42 @@
 .auth-link:hover {
   text-decoration: underline;
 }
+/* کانتینر رمز عبور با دکمه چشم */
+.password-group {
+  position: relative;
+}
+
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-container input {
+  padding-right: 40px;
+  width: 100%;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.password-toggle-btn:hover,
+.password-toggle-btn:focus {
+  opacity: 1;
+}
+
+.password-toggle-btn:focus {
+  outline: 2px solid #007bff;
+  border-radius: 4px;
+}
 
 /* ریسپانسیو */
 @media (max-width: 768px) {

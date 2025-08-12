@@ -217,6 +217,71 @@
   box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2) !important;
 }
 
+.password-strength-container {
+  margin-top: 8px;
+  height: 6px;
+  background-color: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.password-strength-bar {
+  height: 100%;
+  transition: all 0.4s ease;
+}
+
+.password-strength-label {
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.password-hint {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #555;
+}
+
+
+.password-hint.error {
+  color: #d32f2f;
+}
+
+.password-group {
+  position: relative;
+}
+
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-container input {
+  padding-right: 40px; /* فضا برای دکمه چشم */
+  width: 100%;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.password-toggle-btn:hover {
+  opacity: 1;
+}
+
+.password-toggle-btn:focus {
+  outline: 2px solid #007bff;
+  border-radius: 4px;
+}
 /* ریسپانسیو */
 @media (max-width: 768px) {
   .register-container {

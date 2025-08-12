@@ -176,7 +176,7 @@ const ChannelList = () => {
                 <>
                   <label htmlFor={`channel-${channel.id}`} style={{ flex: 1, cursor: 'pointer' }}>
                     <span className="channel-name">{channel.name}</span>
-                    <span className="channel-username">({channel.username})</span>
+                    <span className="channel-username">({channel.platform})</span>
                     <span className={`channel-status ${channel.is_verified ? 'verified' : 'not-verified'}`}>
                       {channel.is_verified ? '✓ وریفای شده' : '✗ وریفای نشده'}
                     </span>
@@ -296,9 +296,10 @@ const AddChannelForm = ({ onAdd, isLoading }) => {
       <div className="form-group" style={{ marginBottom: '10px' }}>
         <input
           type="text"
-          placeholder="شناسه کانال (مثل @channel)"
+          placeholder="@channel"
           value={formData.username}
           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+          dir="ltr"
           required
           disabled={isLoading}
           style={{

@@ -460,3 +460,341 @@
     font-size: 11px;
   }
 }
+
+/* --- پاپ‌آپ مدیریت پرامپت --- */
+
+.prompt-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(30, 30, 50, 0.8));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1200;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.prompt-modal-content {
+  background: white;
+  width: 90%;
+  max-width: 600px;
+  max-height: 100vh;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.4s ease-out;
+}
+
+.prompt-modal-header {
+  background: #1976d2;
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.2rem;
+}
+
+.prompt-modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.8rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.prompt-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* فرم */
+.prompt-form-modal {
+  padding: 20px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #eee;
+}
+
+.prompt-input,
+.prompt-textarea {
+  width: 90%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.prompt-input:focus,
+.prompt-textarea:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.prompt-submit-btn {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.prompt-submit-btn:hover {
+  background: #1565c0;
+}
+
+/* لیست پرامپت‌ها */
+.saved-prompts-list-accordion {
+  padding: 10px 20px;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.prompt-accordion-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  background: #fff;
+}
+
+.prompt-accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: #f5f5f5;
+  cursor: pointer;
+  font-weight: 600;
+  color: #333;
+  transition: background 0.2s;
+}
+
+.prompt-accordion-header:hover {
+  background: #eeeeee;
+}
+
+.prompt-title {
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.prompt-toggle-icon {
+  font-size: 18px;
+  font-weight: bold;
+  color: #1976d2;
+  width: 24px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+.prompt-accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-out;
+  background: white;
+  padding: 0 16px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prompt-accordion-body.expanded {
+  max-height: 300px;
+  padding: 16px;
+  border-top: 1px solid #eee;
+}
+
+.prompt-content-scrollable {
+  max-height: 180px;
+  overflow-y: auto;
+  background: #f8f9fa;
+  padding: 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.prompt-content-scrollable pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* دکمه‌ها همیشه در پایین و قابل دسترس */
+.prompt-actions-sticky {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  background: white;
+  border-top: 1px solid #f0f0f0;
+}
+
+.prompt-actions-sticky button {
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prompt-actions-sticky .prompt-use-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.prompt-actions-sticky .prompt-use-btn:hover {
+  background: #43a047;
+}
+
+.prompt-actions-sticky .prompt-edit-btn {
+  background: #ffb74d;
+    color: white;
+
+}
+
+.prompt-actions-sticky .prompt-edit-btn:hover {
+  background: #fb8c00;
+}
+
+.prompt-actions-sticky .prompt-delete-btn {
+  background: #e57373;
+  color: white;
+}
+
+.prompt-actions-sticky .prompt-delete-btn:hover {
+  background: #d32f2f;
+}
+
+
+.prompt-content pre {
+  background: #f0f0f0;
+  padding: 12px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.prompt-use-btn,
+.prompt-edit-btn,
+.prompt-delete-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prompt-use-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.prompt-use-btn:hover {
+  background: #43a047;
+}
+
+.prompt-edit-btn {
+  background: #ffb74d;
+  color: white;
+}
+
+.prompt-edit-btn:hover {
+  background: #fb8c00;
+}
+
+.prompt-delete-btn {
+  background: #e57373;
+  color: white;
+}
+
+.prompt-delete-btn:hover {
+  background: #d32f2f;
+}
+
+.no-prompts {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  padding: 20px;
+}
+
+/* انیمیشن */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ریسپانسیو */
+@media (max-width: 480px) {
+  .prompt-actions {
+    flex-direction: column;
+  }
+
+  .prompt-submit-btn {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .prompt-content pre {
+    font-size: 13px;
+    padding: 10px;
+  }
+}

@@ -7,15 +7,15 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .models import ChatSession, ChatMessage
-from .serializers import ChatSessionSerializer, ChatMessageSerializer, ChatRequestSerializer
+from .models import ChatSession, ChatMessage,SavedPrompt
+from .serializers import ChatSessionSerializer, ChatMessageSerializer, ChatRequestSerializer,SavedPromptSerializer
 import logging
 from core.logging_filters import set_user_id, set_request_id, set_client_ip
 from config.throttles import RoleBasedRateThrottle
-
 logger = logging.getLogger('chat.activity')
 error_logger = logging.getLogger('chat.errors')
 security_logger = logging.getLogger('chat.security')
+
 
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -25,12 +25,14 @@ def get_client_ip(request):
         ip = request.META.get('REMOTE_ADDR')
     return ip
 
+
 class ChatSessionListCreateView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [RoleBasedRateThrottle]
     throttle_scope = 'user'
+
     @swagger_auto_schema(
-        operation_summary="📜 دریافت لیست سشن‌های چت",
+        operation_summary="دریافت لیست سشن‌های چت",
         operation_description="لیست تمام سشن‌های چت کاربر فعلی را برمی‌گرداند.",
         responses={
             200: openapi.Response('List of chat sessions', ChatSessionSerializer(many=True)),
@@ -45,7 +47,7 @@ class ChatSessionListCreateView(APIView):
         set_user_id(request.user.id)
 
         logger.info(f"User {request.user.id} accessed chat session list from IP={client_ip}")
-        sessions = ChatSession.objects.filter(user=request.user).order_by('-created_at')
+        sessions = ChatSession.objects.filter(user=request.user).order_by('-updated_at')
         serializer = ChatSessionSerializer(sessions, many=True)
         return Response({
             'success': True,
@@ -54,7 +56,7 @@ class ChatSessionListCreateView(APIView):
         })
 
     @swagger_auto_schema(
-        operation_summary="➕ ایجاد سشن چت جدید",
+        operation_summary="ایجاد سشن چت جدید",
         operation_description="یک سشن چت جدید برای کاربر فعلی ایجاد می‌کند.",
         request_body=ChatSessionSerializer,
         responses={
@@ -93,8 +95,9 @@ class ChatSessionDetailView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [RoleBasedRateThrottle]
     throttle_scope = 'user'
+
     @swagger_auto_schema(
-        operation_summary="📄 دریافت جزئیات یک سشن چت",
+        operation_summary="دریافت جزئیات یک سشن چت",
         operation_description="جزئیات یک سشن چت خاص را برمی‌گرداند.",
         responses={
             200: openapi.Response('Chat session details', ChatSessionSerializer),
@@ -115,7 +118,7 @@ class ChatSessionDetailView(APIView):
                 session = ChatSession.objects.get(pk=session_uuid, user=request.user)
             except (ValueError, uuid.UUIDError):
                 session = ChatSession.objects.get(pk=pk, user=request.user)
-            
+
             logger.info(f"User {request.user.id} viewed chat session {session.id}")
             serializer = ChatSessionSerializer(session)
             return Response({
@@ -152,7 +155,7 @@ class ChatSessionDetailView(APIView):
                 session = ChatSession.objects.get(pk=session_uuid, user=request.user)
             except (ValueError, uuid.UUIDError):
                 session = ChatSession.objects.get(pk=pk, user=request.user)
-                
+
             logger.info(f"User {request.user.id} attempting to delete chat session {session.id}")
             session.delete()
             logger.info(f"User {request.user.id} successfully deleted chat session {session.id}")
@@ -172,8 +175,9 @@ class SessionMessagesView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [RoleBasedRateThrottle]
     throttle_scope = 'user'
+
     @swagger_auto_schema(
-        operation_summary="💬 دریافت پیام‌های یک سشن چت",
+        operation_summary="دریافت پیام‌های یک سشن چت",
         operation_description="تمام پیام‌های یک سشن چت خاص را برمی‌گرداند.",
         responses={
             200: openapi.Response('List of chat messages', ChatMessageSerializer(many=True)),
@@ -194,7 +198,7 @@ class SessionMessagesView(APIView):
                 session = ChatSession.objects.get(pk=session_uuid, user=request.user)
             except (ValueError, uuid.UUIDError):
                 session = ChatSession.objects.get(pk=session_id, user=request.user)
-                
+
             logger.info(f"User {request.user.id} accessed messages of chat session {session.id}")
             messages = session.messages.all().order_by('created_at')
             serializer = ChatMessageSerializer(messages, many=True)
@@ -211,6 +215,7 @@ class SessionMessagesView(APIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
 
+# Schemaهای Swagger
 chat_request_schema = openapi.Schema(
     type=openapi.TYPE_OBJECT,
     required=['message'],
@@ -244,12 +249,14 @@ chat_response_schema = openapi.Schema(
     }
 )
 
+
 class ChatMessageView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [RoleBasedRateThrottle]
     throttle_scope = 'user'
+
     @swagger_auto_schema(
-        operation_summary="🤖 چت با هوش مصنوعی",
+        operation_summary="چت با هوش مصنوعی",
         operation_description="ارسال پیام به هوش مصنوعی و دریافت پاسخ آن. اگر session_id ارسال نشود، یک سشن جدید ایجاد خواهد شد.",
         request_body=chat_request_schema,
         responses={
@@ -276,35 +283,31 @@ class ChatMessageView(APIView):
                 'errors': serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        message = serializer.validated_data['message']
+        message = serializer.validated_data['message'].strip()
+        if not message:
+            return Response({
+                'success': False,
+                'message': 'متن پیام نمی‌تواند خالی باشد'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         session_id = serializer.validated_data.get('session_id')
 
         if session_id:
             try:
-                if isinstance(session_id, str):
-                    try:
-                        session_uuid = uuid.UUID(session_id)
-                        session = ChatSession.objects.get(pk=session_uuid, user=request.user)
-                    except (ValueError, ChatSession.DoesNotExist):
-                        try:
-                            session = ChatSession.objects.get(pk=int(session_id), user=request.user)
-                        except (ValueError, ChatSession.DoesNotExist):
-                            security_logger.warning(f"User {request.user.id} tried to access invalid session ID: {session_id}")
-                            return Response({
-                                'success': False,
-                                'message': 'سشن چت یافت نشد'
-                            }, status=status.HTTP_404_NOT_FOUND)
-                else:
+                session_uuid = uuid.UUID(str(session_id))
+                session = ChatSession.objects.get(pk=session_uuid, user=request.user)
+            except (ValueError, uuid.UUIDError, ChatSession.DoesNotExist):
+                try:
                     session = ChatSession.objects.get(pk=session_id, user=request.user)
-                logger.info(f"User {request.user.id} using existing session {session.id}")
-            except ChatSession.DoesNotExist:
-                security_logger.warning(f"User {request.user.id} tried to access non-existent session {session_id}")
-                return Response({
-                    'success': False,
-                    'message': 'سشن چت یافت نشد'
-                }, status=status.HTTP_404_NOT_FOUND)
+                except (ValueError, ChatSession.DoesNotExist):
+                    security_logger.warning(f"User {request.user.id} tried to access invalid session ID: {session_id}")
+                    return Response({
+                        'success': False,
+                        'message': 'سشن چت یافت نشد'
+                    }, status=status.HTTP_404_NOT_FOUND)
+            logger.info(f"User {request.user.id} using existing session {session.id}")
         else:
-            session_title = message[:50] + "..." if len(message) > 50 else message
+            session_title = self.generate_title(message)
             session = ChatSession.objects.create(
                 user=request.user,
                 title=session_title
@@ -316,7 +319,6 @@ class ChatMessageView(APIView):
             role='user',
             content=message
         )
-
         try:
             ai_response = self.get_ai_response(message, session)
             ai_message = ChatMessage.objects.create(
@@ -325,6 +327,8 @@ class ChatMessageView(APIView):
                 content=ai_response
             )
             logger.info(f"AI responded successfully to user {request.user.id} in session {session.id}")
+            session.save(update_fields=['updated_at'])
+
             return Response({
                 'success': True,
                 'data': {
@@ -340,6 +344,34 @@ class ChatMessageView(APIView):
                 'success': False,
                 'message': f'خطا در ارتباط با سرویس هوش مصنوعی: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def generate_title(self, message):
+
+        prompt = (
+            "عنوان کوتاه و مناسب (حداکثر 50 کاراکتر) برای این چت بده. "
+            "عنوان باید خلاصه‌ای از موضوع باشد و حداکثر 50 کاراکتر باشد. "
+            "فقط عنوان رو بده، بدون توضیح اضافه."
+        )
+        payload = {
+            "message": message,
+            "history": [
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": "باشه، فقط عنوان رو برمی‌گردونم"}
+            ]
+        }
+
+        try:
+            response = requests.post(
+                f"{settings.AI_SERVICE_URL}/api/chat",
+                json=payload,
+                timeout=10,
+                proxies={"http": None, "https": None}
+            )
+            response.raise_for_status()
+            title = response.json().get("response", "").strip()
+            return title[:50] if title else message[:50] + "..." if len(message) > 50 else message
+        except Exception:
+            return message[:50] + "..." if len(message) > 50 else message
 
     def get_ai_response(self, message, session):
         ai_service_url = getattr(settings, 'AI_SERVICE_URL')
@@ -371,3 +403,65 @@ class ChatMessageView(APIView):
         except Exception as e:
             error_logger.error(f"AI service error for session {session.id}: {e}")
             raise Exception(f"خطای سرویس هوش مصنوعی: {str(e)}")
+        
+class SavedPromptView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [RoleBasedRateThrottle]
+    throttle_scope = 'user'
+    def get(self, request):
+        prompts = SavedPrompt.objects.filter(user=request.user).order_by('-updated_at')
+        serializer = SavedPromptSerializer(prompts, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        })
+
+    def post(self, request):
+        serializer = SavedPromptSerializer(data=request.data)
+        if serializer.is_valid():
+            prompt = serializer.save(user=request.user)
+            return Response({
+                'success': True,
+                'data': serializer.data,
+                'message': 'پرامپت ذخیره شد'
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk):
+        try:
+            prompt = SavedPrompt.objects.get(pk=pk, user=request.user)
+        except SavedPrompt.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'پرامپت یافت نشد'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SavedPromptSerializer(prompt, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'success': True,
+                'data': serializer.data,
+                'message': 'پرامپت ویرایش شد'
+            })
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            prompt = SavedPrompt.objects.get(pk=pk, user=request.user)
+            prompt.delete()
+            return Response({
+                'success': True,
+                'message': 'پرامپت حذف شد'
+            })
+        except SavedPrompt.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'پرامپت یافت نشد'
+            }, status=status.HTTP_404_NOT_FOUND)

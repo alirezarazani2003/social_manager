@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ChatSession, ChatMessage
+from .models import ChatSession, ChatMessage , SavedPrompt
 import uuid
 
 class ChatMessageSerializer(serializers.ModelSerializer):
@@ -17,7 +17,7 @@ class ChatSessionSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 class ChatRequestSerializer(serializers.Serializer):
-    message = serializers.CharField(max_length=1000)
+    message = serializers.CharField()
     session_id = serializers.CharField(required=False)
     
     def validate_session_id(self, value):
@@ -36,3 +36,8 @@ class ChatRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError("شناسه سشن نامعتبر است")
         
         return value
+    
+class SavedPromptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SavedPrompt
+        fields = ['id', 'title', 'content', 'created_at', 'updated_at']

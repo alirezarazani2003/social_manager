@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import MediaGallery from './MediaGallery';
+import DatePicker from "react-multi-date-picker";
+import TimePicker from "react-multi-date-picker/plugins/time_picker";
+import persian from "react-date-object/calendars/persian";
+import persian_fa from "react-date-object/locales/persian_fa";
+
 
 const PostEditor = () => {
   const [channels, setChannels] = useState([]);
@@ -14,7 +19,6 @@ const PostEditor = () => {
   // Stateهای جدید برای مدیریت گالری
   const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState([]); // آرایه‌ای از مدیاهای انتخاب‌شده از گالری
-
   // دریافت لیست کانال‌ها
   useEffect(() => {
     const fetchChannels = async () => {
@@ -64,6 +68,7 @@ const PostEditor = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (selectedChannels.length === 0) {
       setMessage('لطفاً حداقل یک کانال انتخاب کنید');
       return;
@@ -103,8 +108,8 @@ const PostEditor = () => {
       }
       // اگر زمان‌بندی فعال باشه
       if (isScheduled && scheduledTime) {
-        formData.append('scheduled_time', scheduledTime);
-      }
+        const isoDate = scheduledTime.toDate().toISOString();
+        formData.append('scheduled_time', isoDate);}
       // ارسال به سرور با آدرس صحیح
       const response = await api.post('/posts/create/', formData, {
         withCredentials: true,
@@ -326,7 +331,7 @@ const PostEditor = () => {
                 <label htmlFor="scheduled-time" style={{ display: 'block', marginBottom: '5px' }}>
                   زمان ارسال:
                 </label>
-                <input
+                {/* <input
                   id="scheduled-time"
                   type="datetime-local"
                   value={scheduledTime}
@@ -337,6 +342,20 @@ const PostEditor = () => {
                     padding: '8px',
                     border: '1px solid #ddd',
                     borderRadius: '4px'
+                  }}
+                /> */}
+                      <DatePicker
+                  value={scheduledTime}
+                  onChange={setScheduledTime}
+                  format="YYYY/MM/DD HH:mm"
+                  calendar={persian}
+                  locale={persian_fa}
+                  plugins={[<TimePicker position="bottom" />]}
+                  style={{
+                    padding: '8px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    width: '100%'
                   }}
                 />
               </div>

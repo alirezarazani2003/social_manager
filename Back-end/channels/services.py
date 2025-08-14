@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from telegram import Bot, InputMediaPhoto, InputMediaVideo
 from telegram.error import TelegramError
 import asyncio
-from telegram import InputMediaPhoto, InputMediaVideo, InputMedia
+from telegram import InputMediaPhoto, InputMediaVideo
 import json
 
 
@@ -197,6 +197,7 @@ def send_message_bale(channel , text:str="" , files:list=None):
                     file_data = {"video": f} 
                     response = requests.post(url, data=data, files=file_data)
             else :
+                url=f"https://tapi.bale.ai/bot{token}/sendDocument"
                 data={
                     "text":text,
                     "chat_id":chat_id

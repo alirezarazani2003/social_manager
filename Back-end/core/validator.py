@@ -2,7 +2,7 @@ import re
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
-OTP_PATTERN = re.compile(r'[0-9]\d{5}$')
+OTP_PATTERN = re.compile(r'^\d{6}$')
 PASSWORD_PATTERN = re.compile(
     r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
 )
@@ -19,11 +19,10 @@ def no_html_js_validator(value: str):
     return value
 
 
-
 def otp_validator(value):
     no_html_js_validator(value)
     value = value.strip()
-    if OTP_PATTERN.search(value):
+    if not OTP_PATTERN.search(value):
         raise serializers.ValidationError('مقدار نامعتبر است.')
     return value
 
@@ -31,7 +30,6 @@ def otp_validator(value):
 def password_validator(value):
     no_html_js_validator(value)
     value = value.strip()
-    if PASSWORD_PATTERN.search(value):
+    if not PASSWORD_PATTERN.search(value):
         raise serializers.ValidationError('مقدار نامعتبر است.')
     return value
-

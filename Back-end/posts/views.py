@@ -167,6 +167,38 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         return Response(serializer.data)
 
+    def patch(self, request, *args, **kwargs):
+        post = self.get_object()
+        if post.status != 'pending':
+            return Response({
+                'detail': 'این پست قابل ویرایش نیست.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        request_id = str(uuid.uuid4())[:8]
+        client_ip = get_client_ip(request)
+        set_request_id(request_id)
+        set_client_ip(client_ip)
+        set_user_id(request.user.id)
+
+        logger.info(f"User {request.user.id} patching post {post.id}")
+        scheduled_time = request.data.get('scheduled_time', None)
+        if scheduled_time == '' or scheduled_time is None:
+            request.data._mutable = True
+            request.data['scheduled_time'] = None
+
+        serializer = self.get_serializer(post, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        post = serializer.save(status='pending')
+
+        if post.scheduled_time and post.scheduled_time > timezone.now():
+            send_post_task.apply_async(args=[post.id], eta=post.scheduled_time)
+            logger.info(f"Post {post.id} rescheduled via PATCH to {post.scheduled_time}")
+        elif post.scheduled_time is None:
+            send_post_task.delay(post.id)
+            logger.info(f"Post {post.id} sent to immediate queue after PATCH")
+
+        return Response(serializer.data)
+
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         logger.info(f"User {request.user.id} attempting to delete post {instance.id}")
@@ -339,7 +371,7 @@ class UserMediaViewSet(viewsets.ModelViewSet):
         logger.info(f"User {request.user.id} attempting to upload media file from IP={client_ip}")
 
         if 'file' not in request.FILES:
-            security_logger.warning(f"User {request.user.id} tried to upload without file")
+            security_logger.warning(f"User {request.user.id} tried to upload without file") 
             return Response({'error': 'فایل ارسال نشده'}, status=status.HTTP_400_BAD_REQUEST)
 
         file_size = request.FILES['file'].size

@@ -28,7 +28,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
 
-@app.post("/api/chat", response_model=ChatResponse)
+@app.post("/api/chatyy", response_model=ChatResponse)
 async def chat_with_ai(request: ChatRequest):
     try:
         messages = [{

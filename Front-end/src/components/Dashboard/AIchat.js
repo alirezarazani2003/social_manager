@@ -3,7 +3,7 @@ import api from '../../services/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './AIChat.css';
-
+let isSending = false;
 const AIChat = () => {
   const [sessions, setSessions] = useState([]);
   const [currentSession, setCurrentSession] = useState(null);
@@ -89,6 +89,7 @@ const AIChat = () => {
 
   const sendMessage = async (e) => {
     e.preventDefault();
+    if (!inputMessage.trim() || isSending) return;
     if (!inputMessage.trim() || loading) return;
 
     const userMessage = {
@@ -143,6 +144,7 @@ const AIChat = () => {
         },
       ]);
     } finally {
+      isSending = false;
       setLoading(false);
     }
   };

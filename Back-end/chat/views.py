@@ -361,7 +361,7 @@ class ChatMessageView(APIView):
 
         try:
             response = requests.post(
-                f"{settings.AI_SERVICE_URL}/api/chat",
+                f"{settings.AI_SERVICE_URL}/api/chatyy",
                 json=payload,
                 timeout=10,
                 proxies={"http": None, "https": None}
@@ -384,7 +384,7 @@ class ChatMessageView(APIView):
         payload = {'message': message, 'history': history}
         try:
             response = requests.post(
-                f"{ai_service_url}/api/chat",
+                f"{ai_service_url}/api/chatyy",
                 json=payload,
                 timeout=600,
                 proxies={"http": None, "https": None}

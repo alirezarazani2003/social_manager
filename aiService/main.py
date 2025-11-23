@@ -2,11 +2,13 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 import requests
-from decouple import config
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI(title="AI Chat Service")
 
-OPENROUTER_API_KEY = config("OPENROUTER_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 if not OPENROUTER_API_KEY:
     raise RuntimeError("OPENROUTER_API_KEY environment variable is required!")
 

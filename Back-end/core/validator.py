@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 OTP_PATTERN = re.compile(r'^\d{6}$')
+OTP_PATTERN = re.compile(r'^\d{6}$')
 PASSWORD_PATTERN = re.compile(
     r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
 )

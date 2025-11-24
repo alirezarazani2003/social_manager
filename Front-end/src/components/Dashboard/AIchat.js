@@ -282,7 +282,9 @@ const AIChat = () => {
             </button>
           </div>
         </div>
-
+        <div className="hint-box">
+         به دلیل شلوغ بودن سرور های هوش مصنوعی ممکن است با خطای : <b>خطا در ارسال پیام مواجه شوید</b>  . دراین صورت صفحه را رفرش کنید.
+        </div>
         <div className="messages-container">
           {messages.length === 0 ? (
             <div className="empty-chat">

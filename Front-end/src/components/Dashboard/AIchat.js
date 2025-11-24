@@ -3,7 +3,7 @@ import api from '../../services/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './AIChat.css';
-let isSending = false;
+import { v4 as uuidv4 } from 'uuid';
 const AIChat = () => {
   const [sessions, setSessions] = useState([]);
   const [currentSession, setCurrentSession] = useState(null);
@@ -18,7 +18,7 @@ const AIChat = () => {
   const [modalError, setModalError] = useState('');
   const [expandedPromptId, setExpandedPromptId] = useState(null);
   const messagesEndRef = useRef(null);
-
+  const isSendingRef = useRef(false);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -89,9 +89,12 @@ const AIChat = () => {
 
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!inputMessage.trim() || isSending) return;
-    if (!inputMessage.trim() || loading) return;
-
+    if (!inputMessage.trim() || isSendingRef.current || loading) {
+    return;
+  }
+  isSendingRef.current = true;
+    setLoading(true);
+    setError('');
     const userMessage = {
       content: inputMessage,
       role: 'user',
@@ -104,11 +107,11 @@ const AIChat = () => {
     setInputMessage('');
     setLoading(true);
     setError('');
-
+    const idempotencyKey = uuidv4();
     try {
       const response = await api.post(
         '/chat/chat/',
-        { message: inputMessage, session_id: sessionId },
+        { message: inputMessage, session_id: sessionId,idempotency_key: idempotencyKey },
         { withCredentials: true, timeout: 300000 }
       );
 
@@ -130,6 +133,7 @@ const AIChat = () => {
 
       // به‌روزرسانی لیست سشن‌ها
       fetchSessions();
+
     } catch (err) {
       console.error('Error sending message:', err);
       const errorMsg = err.response?.data?.message || 'ارسال پیام ناموفق بود';
@@ -144,7 +148,7 @@ const AIChat = () => {
         },
       ]);
     } finally {
-      isSending = false;
+      isSendingRef.current = false;
       setLoading(false);
     }
   };

@@ -90,78 +90,105 @@ def send_message_to_channel(channel, text: str = "", files: list = None):
 
 
 def send_message_telegram(channel, text: str = "", files: list = None):
-    bot_token = settings.TELEGRAM_BOT_TOKEN
+    token = settings.TELEGRAM_BOT_TOKEN
     chat_id = channel.platform_channel_id
-    bot = Bot(token=bot_token)
-
-    async def _send():
-        try:
-            if not files:
-                await bot.send_message(chat_id=chat_id, text=text, read_timeout=60)
-                return True, ""
-
-            elif len(files) == 1:
-                file_info = files[0]
-                path = file_info["path"]
-                caption = file_info.get("caption", "")
-
-                if path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                    with open(path, 'rb') as f:
-                        await bot.send_photo(chat_id=chat_id, photo=f, caption=caption or text, read_timeout=60)
-                elif path.lower().endswith(('.mp4', '.mov', '.mkv')):
-                    with open(path, 'rb') as f:
-                        await bot.send_video(chat_id=chat_id, video=f, caption=caption or text, read_timeout=60)
-                else:
-                    with open(path, 'rb') as f:
-                        await bot.send_document(chat_id=chat_id, document=f, caption=caption or text, read_timeout=60)
-                return True, ""
-
-            else:
-                media_group = []
-                for i, f_info in enumerate(files):
-                    path = f_info["path"]
-                    caption = f_info.get("caption", "") if i == 0 else None
-
-                    if path.lower().endswith(('.jpg', '.jpeg', '.png')):
-                        media_group.append(InputMediaPhoto(media=open(path, 'rb'), caption=caption))
-                    elif path.lower().endswith(('.mp4', '.mov', '.mkv')):
-                        media_group.append(InputMediaVideo(media=open(path, 'rb'), caption=caption))
-                    else:
-                        continue
-
-                if not media_group:
-                    return False, "هیچ فایل تصویری یا ویدیویی قابل ارسال نبود."
-
-                await bot.send_media_group(chat_id=chat_id, media=media_group, read_timeout=60)
-                return True, ""
-
-        except TelegramError as e:
-            return False, f"TelegramError: {str(e)}"
-        except Exception as e:
-            return False, f"{type(e).__name__}: {str(e)}"
+    base_url = f"https://api.telegram.org/bot{token}"
 
     try:
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
+        if not files:
+            url = f"{base_url}/sendMessage"
+            data = {
+                "chat_id": chat_id,
+                "text": text or " ",
+                "parse_mode": "HTML",
+                "disable_web_page_preview": True
+            }
+            response = requests.post(url, data=data, timeout=60)
 
-        if loop and loop.is_running():
-            raise RuntimeError("Event loop already running")
+        elif len(files) == 1:
+            f_info = files[0]
+            path = f_info["path"]
+            caption = f_info.get("caption", "") or text
+
+            with open(path, "rb") as f:
+                if path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                    url = f"{base_url}/sendPhoto"
+                    files_payload = {"photo": f}
+                elif path.lower().endswith(('.mp4', '.mov', '.mkv', '.avi', '.webm')):
+                    url = f"{base_url}/sendVideo"
+                    files_payload = {"video": f}
+                elif path.lower().endswith(('.oga', '.ogg')): 
+                    url = f"{base_url}/sendVoice"
+                    files_payload = {"voice": f}
+                else:
+                    url = f"{base_url}/sendDocument"
+                    files_payload = {"document": f}
+
+                data = {
+                    "chat_id": chat_id,
+                    "caption": caption,
+                    "parse_mode": "MarkdownV2"
+                }
+                response = requests.post(url, data=data, files=files_payload, timeout=120)
+
         else:
-            if not loop:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(_send())
-            return result
-    except RuntimeError:
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        return new_loop.run_until_complete(_send())
-    except Exception as e:
-        return False, f"LoopError: {type(e).__name__}: {str(e)}"
-    
+            media = []
+            files_payload = {}
 
+            for i, f_info in enumerate(files[:10]):
+                path = f_info["path"]
+                caption = f_info.get("caption", "") if i == 0 else ""
+                field_name = f"file{i}"
+
+                if path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                    media_type = "photo"
+                elif path.lower().endswith(('.mp4', '.mov', '.mkv', '.avi', '.webm')):
+                    media_type = "video"
+                else:
+                    continue
+
+                media.append({
+                    "type": media_type,
+                    "media": f"attach://{field_name}",
+                    "caption": caption if i == 0 else "",
+                    "parse_mode": "MarkdownV2"
+                })
+
+                files_payload[field_name] = open(path, "rb")
+
+            if not media:
+                return False, "هیچ فایل تصویری یا ویدیویی معتبری برای آلبوم پیدا نشد."
+
+            url = f"{base_url}/sendMediaGroup"
+            data = {
+                "chat_id": chat_id,
+                "media": json.dumps(media, ensure_ascii=False)
+            }
+            response = requests.post(url, data=data, files=files_payload, timeout=180)
+
+        if response.status_code == 200:
+            resp_json = response.json()
+            if resp_json.get("ok"):
+                return True, ""
+            else:
+                error_desc = resp_json.get("description", "خطای نامشخص تلگرام")
+                return False, f"Telegram API Error: {error_desc}"
+        else:
+            return False, f"HTTP {response.status_code}: {response.text}"
+
+    except requests.exceptions.Timeout:
+        return False, "Timeout: ارسال به تلگرام بیش از حد طول کشید."
+    except FileNotFoundError as e:
+        return False, f"فایل پیدا نشد: {e}"
+    except Exception as e:
+        return False, f"{type(e).__name__}: {str(e)}"
+    finally:
+        if 'files_payload' in locals():
+            for f in files_payload.values():
+                try:
+                    f.close()
+                except:
+                    pass
 
 def send_message_bale(channel , text:str="" , files:list=None):
     token = settings.BALE_BOT_TOKEN

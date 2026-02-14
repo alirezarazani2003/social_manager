@@ -79,7 +79,15 @@ docker-compose exec backend python manage.py createsuperuser
   http://localhost:8000/admin
 - **Main Website:**
   http://localhost:3000
+---
+### How to Use the Service
 
+1. To start using the service, you need to create bots on both telegram and bale then and obtain their **bot tokens**.
+2. Add these tokens to the `Back-end/.env` file in the corresponding token configuration fields.
+3. Add each bot as an **admin** to the channel where content will be published.
+4. Once the bots are configured and added to the target channels, the service is fully ready to use.
+
+After completing these steps, you can use all features of the service without limitations.
 
 ## 🤝 Contribution
 Contributions are welcome!  

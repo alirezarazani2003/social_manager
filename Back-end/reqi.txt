@@ -11,3 +11,4 @@ drf_yasg
 django-cors-headers
 requests
 django_celery_beat
+psutil

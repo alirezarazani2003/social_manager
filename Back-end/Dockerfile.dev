@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+COPY reqi.txt .
+RUN pip install --no-cache-dir -r reqi.txt
+
+RUN pip install ipdb
+
+COPY . .
+
+EXPOSE 8000

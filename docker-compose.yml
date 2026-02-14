@@ -5,9 +5,9 @@ services:
     image: postgres:15
     restart: unless-stopped
     environment:
-      POSTGRES_DB: social_manager_db
-      POSTGRES_USER: goat
-      POSTGRES_PASSWORD: alireza_2003 
+      POSTGRES_DB: content_bridge_db
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test 
     env_file:
       - ./Back-end/.env
     volumes:
